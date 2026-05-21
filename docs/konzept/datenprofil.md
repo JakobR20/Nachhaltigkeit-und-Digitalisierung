@@ -90,6 +90,18 @@ Hinweise:
 - **Preis-Auflösung gemischt:** bis 2024 stündlich, ab 2025 viertelstündlich (Marktumstellung Day-Ahead DE-LU). Die Preisreihe hat also keine konstante Frequenz. **Vor dem Join** explizit auf eine gemeinsame Zielfrequenz resampeln (z. B. `prices.resample("1h").mean()`), statt konstante Auflösung anzunehmen — sonst doppelte/fehlende Zuordnungen.
 - **Methodische Lernerfahrung (für die Diskussion zur Datenqualität):** Bei der DWD-Anbindung wurden zwei Bugs vor produktiver Nutzung gefixt: Einheit Kelvin→°C und Lücken an Chunk-Grenzen durch Überlappung. Das unterstreicht, dass externe APIs vor dem Vertrauen in die Daten validiert werden müssen.
 
+### Faktenbox: Korrelation Wetter ↔ Verbrauch (Baumärkte, `02_features.ipynb`)
+
+Die Temperatur↔Verbrauch-Korrelation ist **auflösungsabhängig** — beim Schreiben auf einen Blick:
+
+| Auflösung | Pearson r (Temp ↔ Verbrauch) | Lesart |
+|-----------|------------------------------|--------|
+| stündlich, roh | ≈ **0,11** (über Zähler −0,34…0,23) | Tageszyklus überdeckt das Wettersignal (Artefakt) |
+| Tagesmittel | median **−0,32** (−0,60…0,02; 22/23 negativ) | klares Heizsignal: kälter → mehr Verbrauch |
+| STL-Residuum | median **0,02** (≈ 0) | STL hat das Wetter in Trend + Saison absorbiert |
+
+Konsequenz: STL-Residuum als Anomalie-Score ist wetterrobust; Temperatur/HDD dienen Saison-/Trendmodellierung und Plausibilisierung, nicht als Hauptsignal.
+
 ### Standort-Proxy Würzburg (mit Marja zu klären)
 
 Die tatsächlichen Standorte der Baumärkte sind noch unbekannt (Klärung im Call mit Marja nächste Woche). Bis dahin nutzen wir **Würzburg** (`DEFAULT_LAT/LON` aus `.env`: 49.7913, 9.9534) als Wetter-Proxy.

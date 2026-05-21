@@ -91,6 +91,7 @@ In einem Markdown-Block im jeweiligen Notebook:
 - **Hyperparameter** und wie wir sie gewählt haben (Begründung, nicht Defaults!)
 - **Limitierungen** (z. B. "erkennt keine Drift")
 - **Geschätzte False-Positive-Rate** (visuell, falls keine Labels)
+- **Validierung der Saisonalbereinigung:** Bei jeder residual-basierten Methode (STL, ARIMA) prüfen, ob das **Residuum noch mit externen Treibern korreliert** (v. a. Temperatur). Erwartung: r ≈ 0. Ein deutlich von 0 verschiedenes r heißt, die Saison-/Trendkomponente wurde **unvollständig** abgetrennt → Spezifikation (z. B. STL-`period`, ARIMA-Ordnung) korrigieren. Lehre aus `02_features.ipynb`: stündliche Rohkorrelation täuscht (Tageszyklus überdeckt das Signal) — daher Korrelation auf Tagesaggregaten **und** auf dem Residuum prüfen.
 
 ## Was wir NICHT machen
 

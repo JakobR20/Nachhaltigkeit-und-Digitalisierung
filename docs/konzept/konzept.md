@@ -62,6 +62,7 @@
 - **Schritt 1 – Clustering:** k-Means auf normalisierten mittleren Tagesprofilen fasst Zähler mit ähnlichem Muster zusammen (k=3 aus EDA). Zweck: ARIMA skaliert schlecht pro Einzelzähler; ein Modell je Cluster ist sparsamer und robuster.
 - **Schritt 2 – Forecasting:** (S)ARIMA je Cluster modelliert den erwarteten Verlauf inkl. Saisonalität; Hyperparameter begründet wählen (ACF/PACF, AIC), nicht Defaults.
 - **Schritt 3 – Score:** standardisierte Residuen (Beobachtung − Vorhersage, skaliert) als kontinuierlicher Anomalie-Score; Schwelle über Prädiktionsintervall.
+- **Validierung der Saisonalbereinigung (empirisch belegt, `02_features.ipynb`):** Die STL-Spezifikation (period=168) ist *validiert*, weil das **Residuum nicht mehr signifikant mit dem Wetter korreliert** (Temperatur↔STL-Residuum median r ≈ 0,02). Das heißt: STL hat Trend, Wetter- und Saisonanteil **sauber absorbiert** — das Residuum ist die „echte" Untypischkeit und nicht bloß eine ungemodellte Saison-/Wetterschwankung. Ein deutlich von 0 verschiedenes r wäre umgekehrt ein Hinweis auf eine **fehlerhafte Zerlegung**.
 - **Begründung „k-Means + ARIMA statt Isolation Forest" (ausführlich – erwartete Verteidigungsfrage):**
   1. **Isolation Forest ignoriert die zeitliche Struktur.** Er bewertet Punkte als unabhängige Beobachtungen im Merkmalsraum; Saisonalität muss künstlich als Features eingebaut werden und bleibt eine statische Dichteschätzung. 20 kW gelten als „normal", weil tagsüber häufig – auch nachts um 3 Uhr.
   2. **ARIMA modelliert Saisonalität explizit.** Die Vorhersage *für jeden Zeitpunkt* macht das Residuum per Konstruktion zur **„Untypischkeit für diesen Zeitpunkt"** – eine echte Kontext-Anomalie. 20 kW nachts → großes Residuum; 20 kW mittags → kleines.
@@ -99,6 +100,15 @@
 - **Erklärbarkeits-Bewertung:** qualitativ – kann ein Betreiber den Alarm anhand des Dashboards nachvollziehen?
 - **Übertragbarkeit:** Vergleich der Score-Verteilungen Baumärkte (train) vs. Fremdbranche (test).
 - Tabellen-/Abbildungsverweise: Methodenvergleich, Beispiel-Anomalie mit Konfidenzband.
+- **Befund: Wetter-Korrelation ist auflösungsabhängig (methodisches Sorgfalts-Argument).** Eine naive Korrelation würde in die Irre führen; erst die mehrstufige Analyse zeigt das wahre Signal:
+
+  | Auflösung | Temp↔Verbrauch | Lesart |
+  |-----------|----------------|--------|
+  | stündlich, roh | r ≈ 0,11 | scheinbar irrelevant — Tageszyklus überdeckt das Signal (Artefakt) |
+  | Tagesmittel | median r ≈ −0,32 (22/23 Zähler negativ) | klares **Heizsignal**: kältere Tage → mehr Verbrauch |
+  | STL-Residuum | median r ≈ 0,02 | STL hat das Wetter bereits in Trend + Saison absorbiert |
+
+  Quelle: `02_features.ipynb`. Kernaussage: Wetter ist auf Saisonebene ein realer Treiber, im Residuum aber bereits herausgerechnet.
 
 ## 7. Dashboard-Konzept / Wireframe (~250 Wörter)
 
@@ -114,6 +124,7 @@
 - **Erklärbarkeit vs. Leistung:** bewusster Verzicht auf Foundation Models; Trade-off offen benennen (evtl. geringere Detektionsrate gegen volle Nachvollziehbarkeit).
 - **Grenzen der Methode:** ARIMA-Annahmen (Stationarität nach Differenzierung), Cluster-Stabilität bei Branchenwechsel, Kaltstart bei neuen Mustern.
 - **LLM-Risiken:** Halluzination in Empfehlungen → durch strukturierten Output und regelbasierte Leitplanken eingegrenzt; LLM erklärt, entscheidet aber nicht autonom.
+- **Wetter-Robustheit der Methodenwahl:** Da das STL-Residuum empirisch wetterunabhängig ist (r ≈ 0,02), kommt die Z-Score-Baseline ohne explizite Wetterkorrektur aus — ein Robustheits- und Einfachheitsvorteil. Wetterfeatures bleiben für Erklärung/Plausibilisierung, nicht als Pflichteingang des Anomalie-Scores.
 - **Datenqualität:** flache Zähler, Lücken, fehlende Labels.
 
 ## 9. Nachhaltigkeit & Geschäftsmodell (~250 Wörter)
