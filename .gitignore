@@ -1,0 +1,36 @@
+# Daten – NIEMALS committen (DSGVO!)
+data/raw/*
+data/external/*
+data/processed/*
+!data/raw/.gitkeep
+!data/external/.gitkeep
+!data/processed/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Umgebungsvariablen
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs / Output
+*.log
+output/
+
+# Lokale Claude-Code-Einstellungen (maschinenlokal)
+.claude/settings.local.json
