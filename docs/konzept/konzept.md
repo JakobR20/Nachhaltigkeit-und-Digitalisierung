@@ -76,16 +76,14 @@
 - **Aufgabe:** aus erkannter Anomalie + Kontext (Zeit, Tagesprofil-Abweichung, Wetter/Preis) eine **strukturierte Empfehlungs-Karte** generieren (Schweregrad, Vermutung, vorgeschlagene Maßnahme).
 - **Warum lokal (Ollama):** Smart-Meter-Daten sind DSGVO-relevant → kein Cloud-Abfluss; reproduzierbar, kostenfrei, offline.
 - **Format-Garantie:** **Ollama Structured Outputs** (JSON-Schema, constrained decoding auf Token-Ebene) erzwingt das Ausgabeformat – Format-Treue hängt damit primär an dieser Funktion, nicht am Modell.
-- **Modellwahl (Recherche, M-Series Mac):** primär **Qwen2.5 7B-Instruct**, Fallback **Llama 3.1 8B**. Begründung in der Tabelle:
+- **Modellwahl: Llama 3.2 3B** (lokal, M-Series). Da Ollamas Structured Outputs das JSON-Format auf Token-Ebene erzwingen, entfällt der Hauptgrund für ein größeres Modell (Strukturtreue); die Aufgabe ist eng (kurze, schemagebundene Empfehlungs-Karten aus systemgeliefertem Kontext) → das kleine, schnelle, ressourcenschonende Modell genügt.
 
-| Modell | Q4-Größe / RAM | Speed (M3 Pro) | Deutsch | Strukturierter Output |
-|--------|----------------|----------------|---------|------------------------|
-| **Qwen2.5 7B-Instruct** ⭐ | ~4,5 GB / 16 GB | ~18–25 tok/s | sehr gut (stark multilingual) | sehr gut; Benchmarks > Llama 3.1 8B & Gemma 2 9B (außer IFEval) |
-| **Llama 3.1 8B** (Fallback) | ~5 GB / 16 GB | ~18–25 tok/s | gut | stark im Instruction-Following (IFEval), größte Tooling-Basis |
-| Gemma 2 9B | ~5,5 GB / ≥18 GB | etwas langsamer | sehr gut (europäisch stark) | gut |
-| Mistral 7B | ~4,1 GB / 16 GB | schnell | schwächer/älter | mittel — deprioritisiert |
+| Modell | Q4-Größe / RAM | Eignung für die Aufgabe | Rolle |
+|--------|----------------|--------------------------|-------|
+| **Llama 3.2 3B** ⭐ | ~2–3 GB / 8–16 GB | schnell, geringer Footprint; Format via Structured Outputs erzwungen | **gewählt** |
+| Qwen2.5 7B / Llama 3.1 8B | ~4,5–5 GB / 16 GB | sprachlich stärker, aber für die formatgebundene Kurzaufgabe überdimensioniert | verworfen (Ausbaupfad) |
 
-  Kernpunkt: Da Ollamas Structured Outputs das Format ohnehin erzwingen, entscheidet primär die Größe/Deutsch-Balance → Qwen2.5 7B.
+  Ehrlicher Trade-off: 3B ist in deutscher Fachsprache/Reasoning schwächer → Mitigation über strenges Schema, systemgelieferten Kontext und regelbasierte Plausibilitätsprüfung; ein größeres Modell ist ein einzeiliger Ollama-Tausch. Details: `methodenwahl_defense.md` (Entscheidung 14).
 
 ### 5.4 Übertragbarkeits-Test (~130 Wörter)
 
