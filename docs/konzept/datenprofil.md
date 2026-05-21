@@ -76,6 +76,26 @@ Hypothesen: (a) **Einheiten-Bug Faktor 1000** (W statt kW) — nach `× 1000` l�
 
 **Empfehlung:** vorerst aus der Hauptanalyse **ausschließen** (nicht löschen) und **mit Marja klären** (Einheit W vs. kW? Unterzähler?). Referenz für die Hausarbeit.
 
+## Externe Daten (Wetter & Preise)
+
+Beschafft über `python -m src.apis.fetch_context` (Clients in `src/apis/`, Cache in `data/external/`, Ergebnis in `data/processed/`, beides gitignored). Zeitraum aus dem kompletten Baumarkt-Datensatz abgeleitet (2023-01-01 bis 2026-03-13).
+
+| Datei | Quelle | Inhalt | Umfang |
+|-------|--------|--------|--------|
+| `weather.parquet` | DWD via Brightsky | `temperature` (°C), `dew_point`, `wind_speed`, `solar`/Strahlung, `hdd` (= max(15 − temp, 0)), u. a.; Index UTC, stündlich | ~28.000 Zeilen, −11,2…36,6 °C, keine Zeit-Lücken |
+| `prices.parquet` | EPEX-SPOT via energy-charts (DE-LU) | `price_eur_mwh`; Index UTC | ~39.800 Zeilen, −500…936 €/MWh, keine Lücken |
+
+Hinweise:
+- **Temperatur-Einheit:** Brightsky liefert mit `units=si` **Kelvin**; der Client rechnet auf °C um (sonst wäre HDD durchgängig 0). HDD wird direkt als Feature mitgeführt.
+- **Preis-Auflösung gemischt:** bis 2024 stündlich, ab 2025 viertelstündlich (Marktumstellung Day-Ahead DE-LU). Die Preisreihe hat also keine konstante Frequenz. **Vor dem Join** explizit auf eine gemeinsame Zielfrequenz resampeln (z. B. `prices.resample("1h").mean()`), statt konstante Auflösung anzunehmen — sonst doppelte/fehlende Zuordnungen.
+- **Methodische Lernerfahrung (für die Diskussion zur Datenqualität):** Bei der DWD-Anbindung wurden zwei Bugs vor produktiver Nutzung gefixt: Einheit Kelvin→°C und Lücken an Chunk-Grenzen durch Überlappung. Das unterstreicht, dass externe APIs vor dem Vertrauen in die Daten validiert werden müssen.
+
+### Standort-Proxy Würzburg (mit Marja zu klären)
+
+Die tatsächlichen Standorte der Baumärkte sind noch unbekannt (Klärung im Call mit Marja nächste Woche). Bis dahin nutzen wir **Würzburg** (`DEFAULT_LAT/LON` aus `.env`: 49.7913, 9.9534) als Wetter-Proxy.
+
+**Methodische Begründung:** Wetterereignisse in Deutschland sind räumlich stark korreliert (typische Skala mehrere hundert Kilometer); der Würzburg-Proxy verzerrt absolute Werte minimal, aber nicht die zeitliche Struktur, die für die Anomalieerkennung relevant ist.
+
 ## 5. Offene Punkte für die nächste Stufe (Methodenwahl)
 
 Stand nach EDA (`notebooks/01_eda.ipynb`, Hauptscope Baumärkte):

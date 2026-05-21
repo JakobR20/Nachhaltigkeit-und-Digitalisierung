@@ -6,6 +6,7 @@ Docs: https://brightsky.dev/docs/
 
 Wir nutzen den /weather Endpunkt für stündliche Werte.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,7 @@ def _fetch(lat: float, lon: float, start: date, end: date) -> dict:
         "lon": lon,
         "date": start.isoformat(),
         "last_date": end.isoformat(),
-        "units": "si",  # SI-Einheiten: °C, m/s, mm
+        "units": "si",  # SI: Temperatur in KELVIN, Wind m/s, Strahlung W/m²
     }
     log.info("DWD-Request: %s %s", url, params)
     with httpx.Client(timeout=30.0) as client:
@@ -92,6 +93,11 @@ def get_weather(
         return df
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df = df.set_index("timestamp").sort_index()
+    # Brightsky liefert mit units=si Temperaturen in Kelvin -> auf °C bringen,
+    # damit der dokumentierte Vertrag (°C) und Features wie HDD stimmen.
+    for col in ("temperature", "dew_point"):
+        if col in df.columns:
+            df[col] = df[col] - 273.15
     return df
 
 

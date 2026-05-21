@@ -56,6 +56,14 @@ Aus energy-charts:
 - **Vor dem Join** alle Zeitstempel auf UTC normalisieren. Nach dem Join optional auf "Europe/Berlin" zurück für Plots.
 - Bei 15-Min-Daten: 02:00–03:00 am DST-Wechsel-Tag prüfen, dort entstehen sonst Geister-Rows oder NaT.
 
+## Bekannte API-Eigenheiten
+
+Fallen, die uns in der Praxis schon Zeit gekostet haben:
+
+- **EPEX-Preisauflösung wechselt mitten in der Reihe.** Die DE-LU Day-Ahead-Preise von energy-charts sind **bis 2024 stündlich, ab 2025 viertelstündlich** (Marktumstellung). Eine naive Reihe hat also gemischte Frequenz. **Empfehlung:** vor dem Join immer explizit auf eine gemeinsame Zielfrequenz resampeln (z. B. `prices.resample("1h").mean()` für stündliche Analyse) statt anzunehmen, die Frequenz sei konstant – sonst entstehen beim Join doppelte/fehlende Zuordnungen.
+- **Brightsky liefert mit `units=si` Temperaturen in Kelvin**, nicht °C. Der DWD-Client in `src/apis/dwd.py` rechnet das auf °C um; wer roh auf die API geht, muss `temp_°C = temp_K − 273.15` selbst anwenden (sonst sind Features wie HDD = `max(15 − temp, 0)` durchgehend 0).
+- **Brightsky `last_date` schneidet den letzten Tag ab** (liefert ihn nur bis 00:00). Beim Chunking in Zeitblöcke entstehen sonst Lücken an jeder Blockgrenze. `src/apis/fetch_context.py` löst das per ein-Tag-Überlappung + Dedup.
+
 ## Join-Pattern
 
 Wetter und Preise liegen meist stündlich vor, Smart-Meter oft viertelstündlich. Standard:
