@@ -53,9 +53,10 @@
 
 ### 5.1 Baseline: Z-Score auf Saisonal-Residual (~120 Wörter)
 
-- Saisonkomponente (Tag/Woche) entfernen, Z-Score auf das Residuum; Anomalie bei |z| > 3.
+- Saisonkomponente (Tag/Woche) via STL entfernen, globaler Z-Score je Zähler auf dem Residuum (`stl_resid`); Anomalie bei |z| > 3. Umgesetzt in `notebooks/03_baseline_zscore.ipynb` / `src/anomaly/zscore.py`.
 - Begründung: schnelle, voll erklärbare Referenz; Residual statt Rohwert, sonst Dauer-Fehlalarme durch Tagesgang.
 - Annahmen/Limit: näherungsweise normalverteilte Residuen; erkennt keine Drift.
+- **Die Baseline diente primär als Vergleichsmaßstab; die empirische Evaluation hat systematische Limitationen aufgedeckt, die die Wahl der Hauptmethode motivieren — siehe Abschnitt 6 (Ergebnisse) und 8 (Diskussion).**
 
 ### 5.2 Hauptmethode: Clustering + ARIMA + standardisierte Residuen (~400 Wörter)
 
@@ -110,6 +111,12 @@
 
   Quelle: `02_features.ipynb`. Kernaussage: Wetter ist auf Saisonebene ein realer Treiber, im Residuum aber bereits herausgerechnet.
 
+- **Faktenbox: Ergebnisse der Z-Score-Baseline** (`03_baseline_zscore.ipynb`):
+  - **14.712 Anomalien** bei |z| > 3; Rate **1,7–3,2 %** pro Zähler (über alle Zähler bemerkenswert gleichmäßig).
+  - Beobachtete **2,84 %** statt theoretischer **0,27 %** → **fat-tailed Residuen** (Schwelle empirisch kalibrieren, nicht aus der Normalverteilung).
+  - **Top-10-Anomalien sind durchweg Feiertage** (negative Residuen / Schließtage) → operative False Positives.
+  - **Wochenenden werden problemlos absorbiert** (STL erkennt die Wochenstruktur) — die Fehlalarme entstehen an den *irregulären* Feiertagen.
+
 ## 7. Dashboard-Konzept / Wireframe (~250 Wörter)
 
 - **Übersichtskarte:** KPIs (Anomalien letzte 7 Tage, betroffene Zähler, geschätzter Mehrverbrauch in kWh).
@@ -126,6 +133,15 @@
 - **LLM-Risiken:** Halluzination in Empfehlungen → durch strukturierten Output und regelbasierte Leitplanken eingegrenzt; LLM erklärt, entscheidet aber nicht autonom.
 - **Wetter-Robustheit der Methodenwahl:** Da das STL-Residuum empirisch wetterunabhängig ist (r ≈ 0,02), kommt die Z-Score-Baseline ohne explizite Wetterkorrektur aus — ein Robustheits- und Einfachheitsvorteil. Wetterfeatures bleiben für Erklärung/Plausibilisierung, nicht als Pflichteingang des Anomalie-Scores.
 - **Datenqualität:** flache Zähler, Lücken, fehlende Labels.
+
+### Limitationen der Z-Score-Baseline → Übergang zur Hauptmethode
+
+Die empirische Auswertung der Baseline (`03_baseline_zscore.ipynb`) legt vier systematische Schwächen offen — jede motiviert eine konkrete Eigenschaft der ARIMA-Hauptmethode:
+
+- **L1 – Fat-tailed Residuen:** beobachtete Rate 2,84 % statt 0,27 % (~10×). → *Konsequenz:* Schwelle **empirisch kalibrieren**, nicht aus der 3-Sigma-Annahme ableiten.
+- **L2 – Keine Feiertags-Awareness (Hauptbefund):** STL lernt die regelmäßige Wochenstruktur, aber keine irregulären Feiertage → alle Top-10-„Anomalien" sind Schließtage. → *Konsequenz:* **SARIMAX mit exogenem `is_holiday`** (Features liegen in `features.parquet` bereit); zusätzlich kann die LLM-Schicht „Feiertag" als Kontext entschärfen.
+- **L3 – Heteroskedastizität:** ein globaler σ je Zähler über-flaggt Geschäftsstunden und unter-flaggt ruhige Phasen. → *Konsequenz:* **kontextabhängiges Prädiktionsintervall** (ARIMA) statt globalem Z-Score.
+- **L4 – Kein zeitlicher Kontext:** Punkt-Scoring ohne Bewertung von Dauer/Sequenz. → *Konsequenz:* Forecasting-basierte Methode bewertet Abweichungen über die Zeit hinweg.
 
 ## 9. Nachhaltigkeit & Geschäftsmodell (~250 Wörter)
 

@@ -92,6 +92,7 @@ In einem Markdown-Block im jeweiligen Notebook:
 - **Limitierungen** (z. B. "erkennt keine Drift")
 - **Geschätzte False-Positive-Rate** (visuell, falls keine Labels)
 - **Validierung der Saisonalbereinigung:** Bei jeder residual-basierten Methode (STL, ARIMA) prüfen, ob das **Residuum noch mit externen Treibern korreliert** (v. a. Temperatur). Erwartung: r ≈ 0. Ein deutlich von 0 verschiedenes r heißt, die Saison-/Trendkomponente wurde **unvollständig** abgetrennt → Spezifikation (z. B. STL-`period`, ARIMA-Ordnung) korrigieren. Lehre aus `02_features.ipynb`: stündliche Rohkorrelation täuscht (Tageszyklus überdeckt das Signal) — daher Korrelation auf Tagesaggregaten **und** auf dem Residuum prüfen.
+- **Beobachtete vs. theoretische Anomalie-Rate:** die tatsächliche Flag-Rate dokumentieren und die Abweichung erklären. Bei |z| > 3 erwartet man ~0,27 % unter Normalverteilung; eine deutliche Abweichung (Lehre aus `03_baseline_zscore.ipynb`: ~2,84 %, also ~10×) indiziert **Verteilungseigenschaften** (fat tails) oder **unmodellierte Effekte** (z. B. Feiertage), die im Paper diskutiert werden müssen — und die Schwelle empirisch statt verteilungstheoretisch kalibrieren.
 
 ## Was wir NICHT machen
 
