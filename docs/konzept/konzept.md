@@ -47,7 +47,7 @@
 - **Vorgehensprinzip:** einfach → komplex; mehrere Methoden parallel und vergleichen statt eine „fancy" Methode (vgl. Skill `anomalie-methodenwahl`).
 - **Evaluationsstrategie ohne Labels:** „ground-truth-lite" aus visuell offensichtlichen Anomalien; zeitlicher Train/Test-Split (kein Shuffling).
 
-## 5. Architektur des Prototyps (~700 Wörter, Kern)
+## 5. Architektur des Prototyps (~900 Wörter, Kern)
 
 - **Pipeline-Überblick (Datenfluss):** Smart-Meter (Excel) → `loader` (Normalisierung, tz, stabile meter_ids) → Feature-Engineering (+ Wetter/Preis/Kalender) → Detection-Stufen → Anomalie-Score → LLM-Empfehlung → Dashboard. Abbildung: `01_datenflussdiagramm.png`.
 
@@ -57,7 +57,7 @@
 - Begründung: schnelle, voll erklärbare Referenz; Residual statt Rohwert, sonst Dauer-Fehlalarme durch Tagesgang.
 - Annahmen/Limit: näherungsweise normalverteilte Residuen; erkennt keine Drift.
 
-### 5.2 Hauptmethode: Clustering + ARIMA + standardisierte Residuen (~350 Wörter)
+### 5.2 Hauptmethode: Clustering + ARIMA + standardisierte Residuen (~400 Wörter)
 
 - **Schritt 1 – Clustering:** k-Means auf normalisierten mittleren Tagesprofilen fasst Zähler mit ähnlichem Muster zusammen (k=3 aus EDA). Zweck: ARIMA skaliert schlecht pro Einzelzähler; ein Modell je Cluster ist sparsamer und robuster.
 - **Schritt 2 – Forecasting:** (S)ARIMA je Cluster modelliert den erwarteten Verlauf inkl. Saisonalität; Hyperparameter begründet wählen (ACF/PACF, AIC), nicht Defaults.
@@ -66,21 +66,31 @@
   1. **Isolation Forest ignoriert die zeitliche Struktur.** Er bewertet Punkte als unabhängige Beobachtungen im Merkmalsraum; Saisonalität muss künstlich als Features eingebaut werden und bleibt eine statische Dichteschätzung. 20 kW gelten als „normal", weil tagsüber häufig – auch nachts um 3 Uhr.
   2. **ARIMA modelliert Saisonalität explizit.** Die Vorhersage *für jeden Zeitpunkt* macht das Residuum per Konstruktion zur **„Untypischkeit für diesen Zeitpunkt"** – eine echte Kontext-Anomalie. 20 kW nachts → großes Residuum; 20 kW mittags → kleines.
   3. **Erklärbarkeit ist direkt visualisierbar.** ARIMA liefert ein **Konfidenzintervall**; „erwarteter Verlauf + Konfidenzband + Ist-Wert" ist in einem Dashboard-Plot sofort nachvollziehbar – ein IF-Score (0–1, ohne physikalische Bedeutung) nicht. Genau das erfüllt das Erklärbarkeits-Requirement.
-- **Beitrag zur Übertragbarkeit:** Ein neuer Zähler wird einem bestehenden Cluster zugeordnet → kein pro-Standort-Training nötig.
+- **Beitrag zur Übertragbarkeit (strukturierte Adaption, nicht „plug-and-play"):** Eine neue Liegenschaft/Branche wird nicht blind übernommen, sondern über ihr mittleres Tagesprofil mit den vorhandenen **Cluster-Centroiden** verglichen. Ist die Distanz unter einer definierten Schwelle → das **bestehende ARIMA-Modell des nächsten Clusters** wird genutzt (kein Training). Liegt sie darüber → **Warnung „neues Cluster nötig"** bzw. ein **Default-ARIMA** als Fallback. So entsteht Übertragbarkeit mit *minimalem* Adaptionsaufwand statt der überzogenen Behauptung, die Pipeline laufe auf jeder Branche ungetestet.
 - **Ehrliche Limitierung:** Bei vielen heterogenen Features ohne dominante Zeitstruktur ist IF überlegen → wird als Vergleichsmethode mitgeführt, nicht als Hauptscore.
 
-### 5.3 Handlungsempfehlung: lokales LLM via Ollama (~150 Wörter)
+### 5.3 Handlungsempfehlung: lokales LLM via Ollama (~250 Wörter)
 
 - **Aufgabe:** aus erkannter Anomalie + Kontext (Zeit, Tagesprofil-Abweichung, Wetter/Preis) eine **strukturierte Empfehlungs-Karte** generieren (Schweregrad, Vermutung, vorgeschlagene Maßnahme).
 - **Warum lokal (Ollama):** Smart-Meter-Daten sind DSGVO-relevant → kein Cloud-Abfluss; reproduzierbar, kostenfrei, offline.
-- **Modellwahl (Recherche, M-Series Mac):** primär **Qwen2.5 7B-Instruct** (bestes Verhältnis aus Größe ~4,5 GB Q4, Multilingual-/Deutsch-Qualität, Benchmarks > Llama 3.1 8B & Gemma 2 9B), Fallback **Llama 3.1 8B** (starkes Instruction-Following/IFEval, große Tooling-Basis). Details: Tabelle in Abschnitt 9 / Skill.
 - **Format-Garantie:** **Ollama Structured Outputs** (JSON-Schema, constrained decoding auf Token-Ebene) erzwingt das Ausgabeformat – Format-Treue hängt damit primär an dieser Funktion, nicht am Modell.
+- **Modellwahl (Recherche, M-Series Mac):** primär **Qwen2.5 7B-Instruct**, Fallback **Llama 3.1 8B**. Begründung in der Tabelle:
 
-### 5.4 Übertragbarkeits-Test (~80 Wörter)
+| Modell | Q4-Größe / RAM | Speed (M3 Pro) | Deutsch | Strukturierter Output |
+|--------|----------------|----------------|---------|------------------------|
+| **Qwen2.5 7B-Instruct** ⭐ | ~4,5 GB / 16 GB | ~18–25 tok/s | sehr gut (stark multilingual) | sehr gut; Benchmarks > Llama 3.1 8B & Gemma 2 9B (außer IFEval) |
+| **Llama 3.1 8B** (Fallback) | ~5 GB / 16 GB | ~18–25 tok/s | gut | stark im Instruction-Following (IFEval), größte Tooling-Basis |
+| Gemma 2 9B | ~5,5 GB / ≥18 GB | etwas langsamer | sehr gut (europäisch stark) | gut |
+| Mistral 7B | ~4,1 GB / 16 GB | schnell | schwächer/älter | mittel — deprioritisiert |
 
-- Pipeline auf **Baumärkten** trainieren (Clustering + ARIMA-Modelle), dann **ohne Nachtraining** auf einer **ungesehenen Branche** (z. B. Tankstellen) anwenden.
-- Bewertung: Plausibilität der Cluster-Zuordnung, Verteilung der Residuen-Scores, visuell geprüfte Fehlalarmrate.
-- Beantwortet Teil (a) der Forschungsfrage direkt.
+  Kernpunkt: Da Ollamas Structured Outputs das Format ohnehin erzwingen, entscheidet primär die Größe/Deutsch-Balance → Qwen2.5 7B.
+
+### 5.4 Übertragbarkeits-Test (~130 Wörter)
+
+- **Leitfrage (offen formuliert):** *„Wie weit trägt die Cluster-Zuordnung über Branchen hinweg?"* — also nicht „funktioniert auf neuer Branche", sondern eine empirisch zu beantwortende Frage.
+- **Aufbau:** Pipeline auf **Baumärkten** trainieren (Clustering + ARIMA-Modelle je Cluster), dann auf einer **ungesehenen Branche** (z. B. Tankstellen) die mittleren Tagesprofile gegen die Baumarkt-Centroide matchen.
+- **Messgrößen:** Anteil der Fremd-Zähler, die unter der Distanzschwelle einem Cluster zuordenbar sind; Verteilung der Residuen-Scores im Vergleich zu den Trainingszählern; visuell geprüfte Fehlalarmrate.
+- **Mögliche Ergebnisse offen halten:** Von „Zuordnung trägt gut" bis „Fremdbranche braucht eigenes Cluster" — beide Ausgänge sind ein verwertbares Resultat und adressieren Teil (a) der Forschungsfrage.
 
 ## 6. Evaluation (geplant) (~250 Wörter)
 
@@ -99,20 +109,20 @@
 - **Filter:** Zeitraum, Zähler, Anomalie-Typ.
 - Statischer Mockup (Pflicht, Excalidraw → PNG); optional Streamlit-Prototyp (`src/viz/dashboard.py`). Verweis auf Poster.
 
-## 8. Diskussion (~250 Wörter)
+## 8. Diskussion (~200 Wörter)
 
 - **Erklärbarkeit vs. Leistung:** bewusster Verzicht auf Foundation Models; Trade-off offen benennen (evtl. geringere Detektionsrate gegen volle Nachvollziehbarkeit).
 - **Grenzen der Methode:** ARIMA-Annahmen (Stationarität nach Differenzierung), Cluster-Stabilität bei Branchenwechsel, Kaltstart bei neuen Mustern.
 - **LLM-Risiken:** Halluzination in Empfehlungen → durch strukturierten Output und regelbasierte Leitplanken eingegrenzt; LLM erklärt, entscheidet aber nicht autonom.
 - **Datenqualität:** flache Zähler, Lücken, fehlende Labels.
 
-## 9. Nachhaltigkeit & Geschäftsmodell (~300 Wörter)
+## 9. Nachhaltigkeit & Geschäftsmodell (~250 Wörter)
 
 - **Nachhaltigkeits-Verknüpfung (Müßig):** Digitalisierung als Mittel zur Effizienz; Einordnung in die 8 Dimensionen der Nachhaltigkeit (Vogt), Schwerpunkt ökologisch + ökonomisch + digital.
 - **SDG-Bezug:** SDG 7 (bezahlbare, saubere Energie), SDG 9 (Innovation/Infrastruktur), ggf. SDG 12 (verantwortungsvoller Verbrauch).
 - **Stakeholder/Geschäftsmodell:** Betreiber (Kostensenkung), Stadtwerk/RAUSCH (Mehrwertdienst auf bestehender Zähler-Infrastruktur), KMU ohne eigenes Energieteam.
 - **DatenWerKIOS-Anknüpfung:** Einbettung in die offene Datenplattform; lokale, DSGVO-konforme Verarbeitung als Vertrauensargument.
-- **Ollama-Modellvergleich (Tabelle):** Qwen2.5 7B / Llama 3.1 8B / Gemma 2 9B / Mistral 7B nach Größe, RAM, Tokens/s (M-Series), Deutsch, Strukturtreue – mit Empfehlung.
+- **Modellwahl LLM:** siehe Abschnitt 5.3.
 
 ## 10. Fazit & Ausblick (~200 Wörter)
 
