@@ -34,3 +34,6 @@ output/
 
 # Lokale Claude-Code-Einstellungen (maschinenlokal)
 .claude/settings.local.json
+
+# Harness-Artefakt geplanter Tasks
+.claude/scheduled_tasks.lock
