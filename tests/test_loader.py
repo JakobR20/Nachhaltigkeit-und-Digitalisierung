@@ -102,3 +102,43 @@ def test_mapping_is_stable(tmp_path, caplog):
 def _id_for(mapping_path: Path, filename: str) -> str:
     m = pd.read_csv(mapping_path)
     return m.loc[m["filename"] == filename, "meter_id"].iloc[0]
+
+
+# --------------------------------------------------------------------------- #
+# Site-Konfiguration: Würzburg-Defaults-Fallback
+# --------------------------------------------------------------------------- #
+_DEFAULTS_YAML = (
+    "defaults:\n"
+    "  lat: 49.7913\n"
+    "  lon: 9.9534\n"
+    "  bundesland: BY\n"
+    "  lat_lon_source: default_wuerzburg\n"
+)
+
+
+def test_resolve_site_full_fields_no_fallback(tmp_path, caplog):
+    sites = tmp_path / "sites.yaml"
+    sites.write_text(
+        _DEFAULTS_YAML
+        + "sites:\n  - id: site_full\n    lat: 50.1\n    lon: 8.7\n    bundesland: HE\n",
+        encoding="utf-8",
+    )
+    with caplog.at_level(logging.WARNING):
+        site = loader.resolve_site("site_full", path=sites)
+    assert (site["lat"], site["lon"], site["bundesland"]) == (50.1, 8.7, "HE")
+    assert "Würzburg" not in caplog.text
+
+
+def test_resolve_site_null_fields_use_defaults_and_warn(tmp_path, caplog):
+    sites = tmp_path / "sites.yaml"
+    sites.write_text(
+        _DEFAULTS_YAML
+        + "sites:\n  - id: site_null\n    lat: null\n    lon: null\n    bundesland: null\n",
+        encoding="utf-8",
+    )
+    with caplog.at_level(logging.WARNING):
+        site = loader.resolve_site("site_null", path=sites)
+    assert site["lat"] == 49.7913
+    assert site["bundesland"] == "BY"
+    assert site["lat_lon_source"] == "default_wuerzburg"
+    assert "Using default Würzburg coords for site=site_null" in caplog.text

@@ -30,12 +30,17 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 RAW_DIR = _PROJECT_ROOT / "data" / "raw"
 MAPPING_PATH = _PROJECT_ROOT / "data" / "processed" / "_meter_id_mapping.csv"
+SITES_PATH = _PROJECT_ROOT / "config" / "sites.yaml"
+
+# Felder, die bei fehlender Site-Angabe auf die Würzburg-Defaults zurückfallen.
+_DEFAULTABLE_FIELDS = ("lat", "lon", "bundesland")
 
 _MAPPING_COLUMNS = ["meter_id", "filename", "source_meta_id", "category", "n_observations"]
 
@@ -52,6 +57,46 @@ _CATEGORY_PREFIX = {
 SKIP_FILES = {"Lastgang_36_2023-01-01-2025-12-31.xlsx"}
 
 _TZ = "Europe/Berlin"
+
+
+# --------------------------------------------------------------------------- #
+# Site-Konfiguration (config/sites.yaml) mit Würzburg-Defaults
+# --------------------------------------------------------------------------- #
+def load_sites(path: str | Path = SITES_PATH) -> dict:
+    """Lädt config/sites.yaml (defaults + sites)."""
+    with open(path, encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
+def resolve_site(
+    site_id: str, sites: dict | None = None, path: str | Path = SITES_PATH
+) -> dict:
+    """Site-Metadaten inkl. Fallback auf die Würzburg-Defaults.
+
+    Fehlt eines der Felder lat/lon/bundesland auf Site-Ebene (oder ist null), wird
+    der Wert aus `defaults:` übernommen und eine WARNING geloggt – so ist beim
+    Pipeline-Lauf sofort sichtbar, welche Standorte noch auf den Default fallen
+    (Postleitzahlen werden von Rausch nachgeliefert).
+    """
+    data = sites if sites is not None else load_sites(path)
+    defaults = data.get("defaults", {})
+    site = next((s for s in data.get("sites", []) if s.get("id") == site_id), None)
+    if site is None:
+        raise KeyError(f"Site '{site_id}' nicht in sites.yaml gefunden.")
+
+    merged = dict(site)
+    fell_back = False
+    for field in _DEFAULTABLE_FIELDS:
+        if merged.get(field) is None:
+            merged[field] = defaults.get(field)
+            fell_back = True
+    if fell_back:
+        merged["lat_lon_source"] = defaults.get("lat_lon_source", "default")
+        logger.warning(
+            "Using default Würzburg coords for site=%s (plz pending from Rausch)",
+            site_id,
+        )
+    return merged
 
 
 # --------------------------------------------------------------------------- #

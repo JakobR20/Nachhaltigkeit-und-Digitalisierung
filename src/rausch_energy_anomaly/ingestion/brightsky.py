@@ -24,7 +24,7 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("DWD_BASE_URL", "https://api.brightsky.dev")
-CACHE_DIR = Path(os.getenv("CACHE_DIR", "data/external")) / "dwd"
+CACHE_DIR = Path(os.getenv("CACHE_DIR", "data/raw")) / "weather"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 

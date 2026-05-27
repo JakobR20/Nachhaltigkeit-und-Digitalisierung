@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("ENERGY_CHARTS_BASE_URL", "https://api.energy-charts.info")
 DEFAULT_ZONE = os.getenv("DEFAULT_BIDDING_ZONE", "DE-LU")
-CACHE_DIR = Path(os.getenv("CACHE_DIR", "data/external")) / "epex"
+CACHE_DIR = Path(os.getenv("CACHE_DIR", "data/raw")) / "prices"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
