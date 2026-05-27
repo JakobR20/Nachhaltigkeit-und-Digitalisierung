@@ -1,0 +1,22 @@
+# Standort-Metadaten (extern gepflegt – die RLM-Excels enthalten keine Metadaten).
+# Defaults greifen, solange Rausch die Postleitzahlen noch nicht geliefert hat
+# (Status 26.05.2026, vgl. CLAUDE_patch_v4.md Abschnitt 1.4 / 2).
+
+defaults:
+  lat: 49.7913
+  lon: 9.9534
+  bundesland: BY
+  lat_lon_source: default_wuerzburg
+  fallback_reason: "Postleitzahlen werden von Rausch noch geliefert (Status 26.05.2026)"
+
+# Hinweis: Die konkrete Site-Liste wird in der Loader-Integration (v4 §5 Schritt 3)
+# aus den Kategorie-Ordnern unter data/raw/rlm/ + data/processed/_meter_id_mapping.csv
+# erzeugt. Beispiel-Eintrag als Schema-Vorlage:
+sites:
+  - id: baumarkt_01
+    file: data/raw/rlm/baumarkt_01.xlsx
+    category: baumarkt
+    # lat/lon/bundesland fallen aktuell auf defaults zurück
+    operating_hours: "Mo-Sa 07:00-20:00"
+    connected_load_kw: null
+    plz: null                       # wird nach Rausch-Lieferung ergänzt

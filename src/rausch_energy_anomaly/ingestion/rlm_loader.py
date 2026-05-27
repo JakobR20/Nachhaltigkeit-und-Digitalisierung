@@ -33,7 +33,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
 RAW_DIR = _PROJECT_ROOT / "data" / "raw"
 MAPPING_PATH = _PROJECT_ROOT / "data" / "processed" / "_meter_id_mapping.csv"
 

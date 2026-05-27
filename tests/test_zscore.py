@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.anomaly.zscore import ZScoreDetector
+from rausch_energy_anomaly.models.baseline_zscore import ZScoreDetector
 
 
 def _series_with_outlier() -> pd.Series:

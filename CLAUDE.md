@@ -1,140 +1,217 @@
-# DatenWerKIOS – KI-gestützte Anomalieerkennung im Energieverbrauch
+# CLAUDE.md
+## Projekt-Basis – KI-gestützte Anomalieerkennung im Energieverbrauch
 
-## Projektkontext
+> Memory-Datei für Claude Code. Wird bei jeder Session zuerst gelesen.
+>
+> **Diese Datei enthält die stabilen Grundlagen** des Projekts: Kontext, Datenrealitäten, Termine, Engineering-Standards, Arbeitsweise.
+>
+> **Aktuelle methodische Architektur** (Methodenwahl, Cluster-Setup, LLM-Empfehlung, Übertragbarkeit) ist in **`docs/CLAUDE_patch_v4.md`** dokumentiert. Diese Datei zuerst lesen, dann v4.
 
-Dieses Projekt entsteht im Modul **"Nachhaltigkeit und Digitalisierung"** (Prof. Dr. Michael Müßig, THWS, Master Digital Business Systems) in Kooperation mit **RAUSCH Technology GmbH** (Sven Rausch).
+---
 
-**Bearbeitende:** Jakob und Felix
-**Ansprechpartnerin bei RAUSCH:** Marja Wahl (Data Scientist)
-**Cluster 2, Aufgabe 3:** KI-gestützte Anomalieerkennung im Energieverbrauch auf Basis von Smart-Meter-Daten.
+## 1. Kontext und Stakeholder
 
-## Aufgabenstellung (Originalwortlaut)
+- **Modul:** „Nachhaltigkeit und Digitalisierung" (FIW THWS, MDB-Pflichtmodul, 5 ECTS, Prof. Dr. M. Müßig)
+- **Aufgabe 3 des Moduls:** KI-gestützte Anomalieerkennung im Energieverbrauch von Smart-Meter-Daten, inklusive Handlungsempfehlungen
+- **Team:** Felix Zorn, Jakob Ringel (Master Digital Business, 2. Semester)
+- **Industriepartner:** Rausch Technology – liefert RLM-Lastgangdaten und methodisches Feedback
 
-> Auf Basis von Smart-Meter-Daten sollen Verbrauchsanomalien erkannt und Handlungsempfehlungen generiert werden. Skizziert einen Prototyp-Ansatz: Welche Daten braucht ihr, welche KI-Methode nutzt ihr, wie sieht das Dashboard aus? (Kein Code nötig – Konzept + Wireframe reicht.)
+---
 
-**Schlagworte:** Anomalieerkennung, Smart Meter, KI, Dashboard, Energieeffizienz
+## 2. Was gebaut wird
 
-**Wichtig:** Pflichtabgabe ist Konzept + Wireframe. Wir gehen **darüber hinaus** und bauen einen lauffähigen Notebook-Prototyp, weil Marja uns echte Daten und einen Methoden-Stack-Hinweis geschickt hat. Der Prototyp ist Bonus, nicht Ersatz für das Konzept.
+- **Pipeline** zur Anomalieerkennung in RLM-Lastgängen mehrerer gewerblicher Liegenschaften
+- **Multi-Methoden-Vergleich** als wissenschaftlicher Ergebniskern (Details in v4)
+- **Lokale LLM-basierte Handlungsempfehlung** je Anomalie
+- **Streamlit-Dashboard** als operativer Vorzeigeartefakt für Rausch
+- **Wissenschaftliches Paper + Visualisierung** als Modul-Prüfungsleistung
 
-## Was Claude Code in diesem Repo tun soll
+---
 
-Du bist Coding-Partner für ein Master-Projekt. Halte dich an folgende Prinzipien:
+## 3. Theoretischer Anker für das Paper
 
-1. **Erklären statt nur liefern.** Jakob und Felix lernen das Thema neu. Wenn du eine Methode wählst (z. B. Isolation Forest statt LOF), sag in 2–3 Sätzen warum.
-2. **Klein anfangen.** Wir bauen iterativ. Erst EDA, dann eine simple Baseline (Rolling Z-Score), dann ML-Methoden. Nicht direkt mit LSTM einsteigen.
-3. **Reproduzierbar.** Jeder Schritt landet in einem nummerierten Notebook (`01_eda.ipynb`, `02_baseline.ipynb`, ...) oder einem Modul unter `src/`.
-4. **Keine Smart-Meter-Daten ins Repo committen.** `data/raw/` ist in `.gitignore`. DSGVO-relevant.
-5. **Deutsch ist OK** für Kommentare und Markdown. Variablennamen auf Englisch.
-6. **Frag nach**, wenn die Aufgabenstellung mehrdeutig ist. Wir haben Zugriff auf Marja per Mail.
+- **Stuermer (2019), *Perspectives on Digital Sustainability*** – Verortung in „digitalization for sustainability": ICT als Enabler für Nachhaltigkeit. Anomalieerkennung macht vermeidbaren Verbrauch datengetrieben sichtbar.
+- Selbstreflexive Notiz, die ins Paper gehört: die Pipeline selbst verbraucht ICT-Energie (Stuermers Perspektive 1, „sustainability of digitalization"). Lokales LLM ist hier ein bewusster Beitrag (kein Cloud-Abfluss, kein zusätzlicher Trainings-Energieverbrauch).
 
-## Daten
+---
 
-### Primärdaten (von RAUSCH via OneDrive)
-- Smart-Meter-Verbrauchsdaten – Schema noch zu erkunden, liegt in `data/raw/`
-- Sobald Daten da sind: erste Aufgabe ist EDA-Notebook (`notebooks/01_eda.ipynb`), das beantwortet:
-  - Welche Spalten? Welche Auflösung (15 min / 1 h / täglich)?
-  - Welcher Zeitraum?
-  - Wie viele Zähler/Liegenschaften?
-  - Wie viele Missing Values? Wie sieht der Tages-/Wochen-/Saisonal-Zyklus aus?
-  - Gibt es Labels für bekannte Anomalien? (Vermutlich nein → unsupervised.)
+## 4. Datenrealitäten (verifiziert anhand Beispieldateien)
 
-### Externe Datenquellen
-- **Wetterdaten (DWD):** https://dwd.api.bund.dev/ – Temperatur, Globalstrahlung, Wind. Erwartete Korrelation: kalte Tage → höherer Verbrauch.
-- **Strompreise (EPEX SPOT via energy-charts):** https://api.energy-charts.info/ – Day-Ahead-Preise. Kann erklären, ob Verbrauchsänderungen preisinduziert sind (z. B. dynamische Tarife).
-- Optional später: Feiertagskalender, Schulferien (öffentliche APIs).
+### 4.1 Format der RLM-Daten
+- **Ein Excel-File pro Standort.** Sheet `Tabelle`, zwei Spalten.
+- **Spalte 1:** Zeitstempel im Format `DD.MM.YYYY HH:MM:SS`.
+- **Spalte 2:** Messwert.
+- **Header-Zeile:** `Einheit | kW`. **Position der Header-Zeile ist NICHT fest** – in manchen Files Zeile 0, in anderen nach mehreren leeren Vorlaufzeilen. Loader muss die Zeile mit `Spalte0 == 'Einheit'` dynamisch suchen.
+- **Einheit: kW (Leistung), nicht kWh (Energie).** Konversion: `energy_kwh = power_kw * 0.25` pro 15-min-Intervall.
+- **Auflösung:** 15 Minuten. Bei 3 Jahren ergeben sich ca. 105.120 Datenpunkte pro Standort.
+- **Keine Metadaten in den Files** – keine Standort-ID, keine PLZ, keine Status-Codes. Metadaten werden extern in `config/sites.yaml` gepflegt.
 
-## Methodenkanon (aus Marjas Mail)
+### 4.2 Zeitstempel und DST
+- **Zeitzone:** Europe/Berlin lokal (**NICHT** UTC).
+- **DST-Verhalten variiert je File:**
+  - Herbst: manche Files haben duplizierte Zeitstempel (02:00–02:45 zweimal), manche überschreiben die wiederholte Stunde.
+  - Frühling: 75-min-Lücke (02:00–02:45 fehlt), konsistent in allen Files.
+- Loader muss tolerant gegenüber beiden DST-Varianten sein, mit klarer Log-Ausgabe pro File.
 
-In etwa dieser Reihenfolge testen, von einfach nach komplex:
+### 4.3 Zeitraum
+- 01.01.2023 00:00 bis 31.12.2025 23:45 Europe/Berlin.
 
-| Stufe | Methode | Warum |
-|-------|---------|-------|
-| 0 | Rolling Z-Score / IQR auf Residuen | Baseline. Schnell, erklärbar, gut fürs Konzept. |
-| 1 | STL-Decomposition + Residual-Outlier | Trennt Trend/Saison/Rest. Standardansatz für Zeitreihen. |
-| 2 | Isolation Forest auf Features (Stunde, Wochentag, Lag, Wetter) | Unsupervised, robust, gut interpretierbar via Feature-Importance. |
-| 3 | DBSCAN / k-Means auf Tagesprofilen | Findet untypische Tage. Cluster-Bewertung mit Silhouette. |
-| 4 | ARIMA / SARIMA + Prediction Interval | Statistisches Forecasting, Anomalie = Wert außerhalb Konfidenzband. |
-| 5 | LSTM-Autoencoder oder Prophet | Nur wenn Zeit reicht und es Mehrwert gibt. Schwer zu erklären in der Hausarbeit. |
+### 4.4 Fünf Standortkategorien
+- **Tankstellen** – 24/7-Betrieb
+- **Baumärkte** – begrenzte Öffnungszeit, typisch Mo–Sa
+- **Ladesäulen** – Verbrauchsmuster vermutlich nachfrageabhängig, je nach Lage stark variabel
+- **Büro** – Werktagsmuster, Wochenende stark abgesenkt
+- **Handel** – kategoriespezifisch je nach Subbranche
 
-**Faustregel:** Für die Hausarbeit zählt Methodenvielfalt + saubere Begründung mehr als das fancyste Modell. Lieber 3 Methoden gut verglichen als ein LSTM ohne Vergleich.
+Pro Kategorie ist „normal" etwas völlig anderes. Modellbildung muss kategorisierungssensitiv sein.
 
-## Tech-Stack
+---
 
-- **Python 3.11+** (via uv oder venv)
-- **Pandas, NumPy** – Datenhandling
-- **scikit-learn** – Isolation Forest, DBSCAN, k-Means, Preprocessing
-- **statsmodels** – STL, ARIMA
-- **Plotly** (interaktiv) und **Matplotlib** (statisch für Hausarbeit)
-- **Streamlit** (optional) – falls wir das Wireframe-Dashboard lauffähig machen wollen
-- **Jupyter** – Notebooks
-- **httpx** + **tenacity** – API-Calls mit Retry
-- **ruff** + **black** – Linting/Formatting
+## 5. Externe Datenquellen
 
-## Verzeichnisstruktur
+| Quelle | Inhalt | Auflösung | Endpunkt |
+|--------|--------|-----------|----------|
+| Bright Sky (DWD) | Wetter (Temperatur, Solar, Niederschlag, Wind, Cloud Cover, Humidity) | 60 min | `https://api.brightsky.dev/weather` |
+| Energy-Charts | Day-Ahead-Strompreis Bidding Zone DE-LU | 60 min | `https://api.energy-charts.info/price` |
+| (optional) | Stündliche CO₂-Intensität via `/public_power` | 60 min | Energy-Charts |
+
+**Caching-Pflicht:** alle API-Antworten monatsweise als JSON unter `data/raw/<api>/<site>/<yyyy-mm>.json` persistieren. Wiederholte Pipeline-Läufe lesen aus dem Cache; Rohdaten werden nie überschrieben.
+
+---
+
+## 6. Projektzeitplan und Termine
+
+| Datum | Ereignis | Status |
+|-------|----------|--------|
+| 26.03.2026 | Modul-Intro | ✓ |
+| 16.04.2026 | Workshop mit S. Rausch im Modul | ✓ |
+| 09.05.2026 | Bilateraler Rausch-Termin (Aufgabenstellung, Datenzugang) | ✓ |
+| 21.05.2026 | Zwischen-Pitch | ✓ |
+| 26.05.2026 | Rausch-Feedback-Termin → Architektur-Iteration (v4) | ✓ |
+| 18.06.2026 | QS Methodik im Modul | offen |
+| 25.06.2026 | Letzte QS im Modul | offen |
+| 02.–03.07.2026 | Paper-Abgabe (1. Tag Prüfungszeitraum) | offen |
+
+---
+
+## 7. Prüfungsleistungen
+
+Laut Modulhandbuch (Müßig, Foliensatz „Struktur"):
+- **Wissenschaftliches Paper:** ca. 3.000 Wörter, ca. 8 Seiten Haupttext, max. 12 Seiten gesamt
+- **Visualisierung:** wissenschaftliches Poster ODER Video (7–10 Min)
+- Gewichtung: 50/50
+- Bei Visualisierung: Content 75, Design 25
+
+Das Streamlit-Dashboard ist **Belegmaterial** für das Paper und ein **Vorzeigeartefakt** für Rausch, aber selbst keine Prüfungsleistung.
+
+---
+
+## 8. Engineering-Standards
+
+- **Sprache:** Python 3.11+
+- **Dependency-Management:** `uv`, gepinnte Versionen in `pyproject.toml`
+- **Lint + Format:** `ruff`
+- **Type-Checks:** `mypy --strict`
+- **Tests:** `pytest`, Coverage > 70 % in `src/`
+- **Logging:** strukturiert (Python-`logging`), niemals `print()` im Pipeline-Code
+- **Type-Hints:** vollständig
+- **Reproduzierbarkeit:** Seeds in `numpy`, `tensorflow`/`torch`, `random` fixiert
+- **Konfiguration:** `config/config.yaml` als Single Source of Truth
+- **Secrets:** `.env` aus `.env.example`, niemals committen
+
+**Vertraulichkeit:** Rausch-Daten sind nicht öffentlich. `data/raw/rlm/` ist gitignored; im Repo nur synthetische Sample-Daten zur Demonstration.
+
+---
+
+## 9. Projektstruktur (Skeleton)
 
 ```
-datenwerkios-anomalie/
-├── CLAUDE.md                  # Diese Datei
-├── README.md                  # Projektbeschreibung für Menschen
-├── pyproject.toml             # Dependencies
-├── .env.example               # Vorlage für API-Keys
-├── .gitignore
-├── data/
-│   ├── raw/                   # Smart-Meter-Daten (NICHT committen)
-│   ├── external/              # Wetter, Preise (Cache, nicht committen)
-│   └── processed/             # Cleaned / Feature-Engineered (nicht committen)
-├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_baseline_zscore.ipynb
-│   ├── 03_stl_decomposition.ipynb
-│   ├── 04_isolation_forest.ipynb
-│   └── 05_method_comparison.ipynb
-├── src/
-│   ├── apis/                  # DWD- und Strompreis-Clients
-│   ├── eda/                   # Wiederverwendbare Plot- und Stats-Helfer
-│   ├── anomaly/               # Methodenimplementierungen (sklearn-style fit/predict)
-│   └── viz/                   # Dashboard- und Plot-Templates
+schadschoepfung-anomaly/
+├── CLAUDE.md                    # diese Datei
 ├── docs/
-│   ├── konzept/               # Hausarbeit / Konzeptpapier
-│   └── wireframe/             # Dashboard-Skizzen
-└── tests/                     # Unit-Tests, v. a. für API-Clients
+│   └── CLAUDE_patch_v4.md       # aktuelle Architektur-Entscheidungen
+├── README.md
+├── pyproject.toml
+├── .gitignore                   # data/raw/rlm/, models/*.keras, .env
+├── .env.example
+├── app/
+│   └── dashboard.py             # Streamlit
+├── config/
+│   ├── config.yaml
+│   ├── sites.yaml
+│   └── recommendations.yaml
+├── data/
+│   ├── SCHEMA.md
+│   ├── raw/
+│   │   ├── rlm/                 # Rausch-Excels (gitignored)
+│   │   ├── weather/             # Bright-Sky-Cache
+│   │   └── prices/              # Energy-Charts-Cache
+│   ├── interim/
+│   └── processed/
+├── src/schadschoepfung/
+│   ├── __init__.py
+│   ├── ingestion/
+│   │   ├── rlm_loader.py
+│   │   ├── brightsky.py
+│   │   └── energy_charts.py
+│   ├── preprocessing/
+│   ├── features/
+│   ├── models/                  # konkrete Module siehe v4
+│   ├── evaluation/
+│   ├── diagnosis/
+│   ├── recommendations.py
+│   ├── visualization/
+│   └── utils/
+├── notebooks/
+├── tests/
+├── reports/
+│   ├── methodology.md
+│   ├── figures/
+│   └── tables/
+└── models/
 ```
 
-## Arbeitsweise mit Claude Code
+Die konkreten Module unter `src/schadschoepfung/models/` und `evaluation/` sind in **`docs/CLAUDE_patch_v4.md` Abschnitt 4** definiert.
 
-- **Plan zuerst.** Bevor du Code schreibst, sag in 3–5 Bullets, was du tun willst. Dann erst die Datei.
-- **Eine Sache pro Notebook-Zelle.** Lange Zellen sind unlesbar.
-- **Plots haben immer:** Titel, Achsenbeschriftung, Einheit, Legende. Kein Default-Matplotlib-Style.
-- **Wenn du eine API rufst:** Immer mit Caching (`data/external/`). Wir wollen nicht bei jedem Notebook-Rerun den DWD nerven.
+---
 
-## Projekt-Skills (.claude/skills/)
+## 10. Operative Arbeitsweise
 
-Folgende Skills werden je nach Kontext automatisch aktiv:
+**Grundregel: erst Plan, dann Code.** Pro Subtask kurzer Plan (Datenstruktur, Funktionssignatur, Testfälle) → Bestätigung im Chat → Implementierung.
 
-- **smart-meter-eda** – Pflichtchecks bei explorativer Analyse von Smart-Meter-Daten.
-- **anomalie-methodenwahl** – Entscheidungslogik für die Methodenwahl (Z-Score, STL, Isolation Forest, etc.).
-- **external-data-apis** – Konventionen für DWD- und EPEX-API-Calls (Caching, Retries, Zeitzonen).
-- **paper-poster-thws** – Struktur, Schreibstil und Zitation für Paper (3000 Wörter) + Poster (50/50).
+**Annahmen sichtbar machen:** Bei Unsicherheit über Datenstrukturen, API-Edge-Cases oder Hyperparameter-Wahl entweder zurückfragen oder im Code-Kommentar mit `# ASSUMPTION:` markieren samt Begründung. Niemals stillschweigend annehmen.
 
-Wenn ein Skill nicht greift, obwohl er passt: `description`-Frontmatter überprüfen.
+**Beispiele für `# ASSUMPTION:`:**
+- DST-Behandlung bei Files ohne Herbst-Duplikate
+- Bundesland-Default für Standorte ohne explizite Region
+- Schwellwert-Wahl für Anomalie-Klassifikation, wenn Validierungsdaten knapp sind
 
-## Slash-Commands (.claude/commands/)
+**Parallelisierung:** Die manuelle Annotation von ~200 Anomalie-Kandidaten kann ab dem Moment laufen, in dem das EDA-Notebook läuft – sie muss nicht auf trainierte Modelle warten. Das spart am Ende des Zeitplans Druck.
 
-- `/eda-quickcheck <datei>` – Schneller EDA-Check mit Profil und Plots, Output nach `docs/konzept/datenprofil.md`.
-- `/fetch-context` – Holt Wetter und Strompreise passend zum Datenzeitraum.
-- `/baseline-zscore` – Implementiert die Z-Score-Baseline mit Notebook.
-- `/sync-konzept` – Aktualisiert das Konzeptpapier auf den aktuellen Stand.
+---
 
-## Stand der Aufgabe
+## 11. Offene Punkte (Stand 26.05.2026)
 
-- [x] Projektstruktur angelegt
-- [ ] Smart-Meter-Daten ins `data/raw/` einlesen
-- [ ] EDA-Notebook (`01_eda.ipynb`)
-- [ ] DWD-Wetter-Client + Cache
-- [ ] EPEX-Strompreis-Client + Cache
-- [ ] Baseline Z-Score
-- [ ] STL-Dekomposition
-- [ ] Isolation Forest mit Wetter-Features
-- [ ] Methodenvergleich
-- [ ] Wireframe Dashboard
-- [ ] Konzeptpapier
+Diese Punkte sind noch nicht abschließend geklärt. Vor blockierender Implementierung Rückfrage:
+
+1. **Postleitzahlen Baumärkte** – wird von Rausch nachgeliefert. Bis dahin gilt der Würzburg-Default (siehe v4 Abschnitt 1.4).
+2. **Anschlussleistung je Standort** – falls geliefert, in `sites.yaml` ergänzen; Default `null`.
+3. **Öffnungszeiten je Baumarkt** – aus den Daten ableitbar (95.-Perzentil Wochen-Lastmuster), falls nicht geliefert.
+4. **CO₂-Intensität:** Default 380 g/kWh (Jahresmittel DE) oder stündlich via Energy-Charts `/public_power`. Entscheidung im Methodenkapitel.
+
+---
+
+## 12. Reihenfolge für Claude-Code-Sessions
+
+**Session 1 – Setup:**
+1. Diese `CLAUDE.md` lesen
+2. `docs/CLAUDE_patch_v4.md` lesen
+3. Repo-Skeleton anlegen (siehe Abschnitt 9)
+4. `pyproject.toml` mit gepinnten Versionen schreiben
+5. Im Chat antworten: Phasenplan + offene Fragen aus Abschnitt 11, BEVOR Implementierung beginnt
+
+**Folgesessions:** gemäß Schrittfolge in **`docs/CLAUDE_patch_v4.md` Abschnitt 5**.
+
+---
+
+*Stand: 26.05.2026 – Projekt-Basis nach Rausch-Feedback-Termin und Zwischen-Pitch.*

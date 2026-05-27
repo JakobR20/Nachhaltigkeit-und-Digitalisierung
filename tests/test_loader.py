@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.eda import loader
+from rausch_energy_anomaly.ingestion import rlm_loader as loader
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW = PROJECT_ROOT / "data" / "raw"

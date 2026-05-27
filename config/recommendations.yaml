@@ -1,0 +1,23 @@
+# Regelbasierte Leitplanken + Templates für die LLM-Handlungsempfehlung.
+# Das LLM (Llama 3.2 3B via Ollama) formuliert nur innerhalb dieser Struktur;
+# die Schweregrad-Schwellen und Pflichtfelder sind hier festgelegt (Stub).
+
+severity:
+  # Schwellen auf dem standardisierten Anomalie-Score (|z| bzw. skaliertes Residuum)
+  low: 3.0
+  medium: 4.0
+  high: 5.0
+
+# Pflichtfelder der Empfehlungs-Karte (erzwungen via Ollama Structured Outputs / JSON-Schema)
+card_schema:
+  - severity            # low | medium | high
+  - segment             # nachts | vormittag | mittag | nachmittag
+  - suspected_cause     # kurze Vermutung
+  - recommended_action  # konkrete Maßnahme
+
+# Beispielhafte Maßnahmen-Hinweise je Segment (Kontext fürs Prompting, keine harten Antworten)
+hints_by_segment:
+  nachts: "Stand-by-/Basislast prüfen (Kälte-/Lüftungstechnik, Beleuchtung)."
+  vormittag: "Hochlauf-/Anlagenstart prüfen."
+  mittag: "Lastspitze plausibel? Gleichzeitigkeit von Verbrauchern."
+  nachmittag: "Hauptgeschäftszeit – Abgleich mit Öffnungszeiten / Sonderbetrieb."

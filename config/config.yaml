@@ -1,0 +1,65 @@
+# Single Source of Truth für die Pipeline-Konfiguration.
+# Werte aus CLAUDE_patch_v4.md (Abschnitt 3) plus allgemeine Pfade/Defaults.
+
+general:
+  seed: 42
+  timezone: Europe/Berlin
+  period_start: "2023-01-01"
+  period_end: "2026-03-13"        # erweitert ggü. Brief (§4.3) auf reales Inventar
+
+paths:
+  raw_rlm: data/raw/rlm
+  raw_weather: data/raw/weather
+  raw_prices: data/raw/prices
+  interim: data/interim
+  processed: data/processed
+  models: models
+
+co2:
+  default_g_per_kwh: 380          # Jahresmittel DE; stündliche Variante als Sensitivität (methodology.md)
+  hourly_source: energy_charts_public_power
+
+clustering:
+  tagesprofile:
+    enabled: true
+    k_values: [2, 3, 4, 5]        # Elbow-/Silhouette-Suche
+    dim: 96                        # 24h × 4 Werte (15-min)
+  segmente:
+    enabled: true
+    segments:
+      - name: nachts
+        start_hour: 0
+        end_hour: 6
+      - name: vormittag
+        start_hour: 6
+        end_hour: 11
+      - name: mittag
+        start_hour: 11
+        end_hour: 14
+      - name: nachmittag
+        start_hour: 14
+        end_hour: 22
+    features_per_segment: [mean, max, std, slope]
+    k_values: [2, 3, 4]
+
+models:
+  zscore:
+    enabled: true
+    threshold: 3.0
+    stl_period: 96                 # 24h auf 15-min-Basis
+  arima:
+    enabled: true
+    selection: auto                # ACF/PACF + AIC-basiert
+    seasonal: true
+    one_model_per_cluster: true
+  autoencoder:
+    enabled: true
+    variants: [dense, lstm]
+    window_hours: 24
+    one_model_per_category: true
+    seed: 42
+
+evaluation:
+  precision_sample_size: 200
+  kappa_pairwise: true
+  inference_timing: true

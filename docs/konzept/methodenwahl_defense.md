@@ -1,5 +1,8 @@
 # Methodenwahl-Verteidigung — DatenWerKIOS Anomalieerkennung
 
+> **Status:** durch `docs/CLAUDE_patch_v4.md` (26.05.2026) teilweise revidiert – siehe dort für aktuellen Stand.
+> Konkret betroffen: die LSTM-/Deep-Learning-Position (Entscheidungen #11/#12). v4 führt den **Autoencoder (Dense + LSTM) als gleichberechtigte Hauptmethode B** im empirischen Methodenvergleich ein; der hier dokumentierte Ausschluss gilt damit nicht mehr unverändert. Dieses Dokument bleibt als **Argumentationshistorie** erhalten.
+
 > Interne Verteidigungsgrundlage für jede methodische Entscheidung im Projekt.
 > Adressatin: u. a. Marja Wahl (Data Scientist, RAUSCH) und Prof. Müßig — fachlich
 > versiert, daher technisch präzise statt oberflächlich.

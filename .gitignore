@@ -37,3 +37,11 @@ output/
 
 # Harness-Artefakt geplanter Tasks
 .claude/scheduled_tasks.lock
+
+# Modell-Artefakte (z. B. *.keras)
+models/*
+!models/.gitkeep
+
+# Interim-Daten
+data/interim/*
+!data/interim/.gitkeep

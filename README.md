@@ -1,8 +1,12 @@
-# DatenWerKIOS – Anomalieerkennung im Energieverbrauch
+# rausch-energy-anomaly – Anomalieerkennung im Energieverbrauch
 
 Master-Projekt im Modul "Nachhaltigkeit und Digitalisierung" (THWS / Prof. Müßig) in Kooperation mit RAUSCH Technology GmbH.
 
-**Aufgabe:** KI-gestützte Erkennung von Verbrauchsanomalien in Smart-Meter-Daten + Konzept + Dashboard-Wireframe.
+**Aufgabe:** KI-gestützte Erkennung von Verbrauchsanomalien in RLM-Lastgängen + Handlungsempfehlungen + Streamlit-Dashboard; Prüfungsleistung ist Paper + Visualisierung.
+
+**Architektur:** empirischer Vergleich dreier Methoden — Z-Score-Baseline, ARIMA pro Cluster, Autoencoder (Dense+LSTM) pro Kategorie — plus lokale LLM-Empfehlung (Llama 3.2 3B via Ollama). Python-Paket: `rausch_energy_anomaly` (`src/`-Layout).
+
+> Projektgrundlagen in `CLAUDE.md`, aktuelle Architektur in `docs/CLAUDE_patch_v4.md`.
 
 ## Setup
 

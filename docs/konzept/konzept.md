@@ -1,5 +1,8 @@
 # Erklärbare, übertragbare Anomalieerkennung im Energieverbrauch von Gewerbeliegenschaften
 
+> **Status:** durch `docs/CLAUDE_patch_v4.md` (26.05.2026) teilweise revidiert – siehe dort für aktuellen Stand.
+> Konkret betroffen: der **Cross-Category-Transfer** wird ersetzt durch **Innerhalb-Kategorie-Generalisierung** (trainieren auf N Standorten einer Kategorie, anwenden auf einen weiteren derselben Kategorie). Zudem ist die Methodik nun ein **empirischer Vergleich** von Z-Score, ARIMA und Autoencoder. Dieses Dokument bleibt als **Argumentationshistorie** erhalten.
+
 > **Format:** Wissenschaftliches Paper (~3000 Wörter, max. 12 Seiten) + wissenschaftliches Poster (50/50).
 > **Modul:** Nachhaltigkeit und Digitalisierung (Prof. Dr. Michael Müßig, THWS, M. Digital Business Systems).
 > **Kooperation:** RAUSCH Technology GmbH · Cluster 2, Aufgabe 3.

@@ -1,11 +1,11 @@
 """Holt Wetter (DWD/Brightsky) und Strompreise (EPEX/energy-charts) für den
 Zeitraum der Smart-Meter-Daten und legt sie als Parquet unter data/processed/ ab.
 
-Nutzt die bestehenden Clients `src.apis.get_weather` / `get_prices` (mit Cache).
-Chunkt in 3-Monats-Blöcken, fällt bei API-Problemen pro Block auf monatlich zurück.
-Keine Anomalie-Logik – nur Beschaffung, Normalisierung, Sanity-Check.
+Nutzt die Ingestion-Clients `brightsky.get_weather` / `energy_charts.get_prices`
+(mit Cache). Chunkt in 3-Monats-Blöcken, fällt bei API-Problemen pro Block auf
+monatlich zurück. Keine Anomalie-Logik – nur Beschaffung, Normalisierung, Sanity-Check.
 
-    python -m src.apis.fetch_context
+    python -m rausch_energy_anomaly.ingestion.fetch_context
 """
 
 from __future__ import annotations
@@ -17,8 +17,9 @@ from datetime import date
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.apis import get_prices, get_weather
-from src.eda import loader
+from rausch_energy_anomaly.ingestion import rlm_loader as loader
+from rausch_energy_anomaly.ingestion.brightsky import get_weather
+from rausch_energy_anomaly.ingestion.energy_charts import get_prices
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
