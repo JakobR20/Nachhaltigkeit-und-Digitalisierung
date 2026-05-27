@@ -15,6 +15,23 @@
 Vergleichsmetriken: geschätzte Precision (manuelle Annotation ≈ 200 Punkte), Cohen's Kappa
 (Methodenübereinstimmung), Inferenzzeit pro Standort, qualitative Erklärbarkeit.
 
+## STL-Periode (96 vs. 168 vs. 672)
+
+Die STL-Saisonperiode ist eine **methodische Entscheidung**, kein Detail. Sie muss zur
+Sampling-Auflösung passen:
+
+- **`period = 96` (Default):** Tagesperiode auf **15-min**-Basis (24 h × 4). Das ist die
+  korrekte Dimensionierung für unsere RLM-Daten, die nativ in 15-min vorliegen.
+- **`period = 168`** war im **alten** Code gesetzt, galt aber für auf **Stunden**
+  resampelte Daten (7 × 24 = Wochenperiode auf 1-h-Basis). Für die jetzige 15-min-Pipeline
+  ist 168 **falsch dimensioniert** (entspräche nur 42 h) und wird nicht verwendet.
+- **`period = 672` (optional):** Wochenperiode auf 15-min-Basis (7 × 96). Wird als
+  zusätzliche Variante für einen **STL-Robustvergleich** in der Feature-Phase geführt: Tages-
+  vs. Wochensaison, Einfluss auf das Residuum (und damit auf die Anomalie-Rate).
+
+Beide Perioden (96, 672) sind methodisch begründet; die Tagesperiode 96 ist der Default,
+672 dient der Sensitivitätsprüfung.
+
 ## Offene Sensitivitäts-/Limitationsdiskussionen
 
 - **CO₂-Intensität:** Default 380 g/kWh (Jahresmittel DE) vs. stündliche Variante via

@@ -46,7 +46,8 @@ models:
   zscore:
     enabled: true
     threshold: 3.0
-    stl_period: 96                 # 24h auf 15-min-Basis
+    stl_period: 96                 # Tagesperiode: 24h auf 15-min-Basis (Default)
+    stl_period_weekly: 672         # optional: Wochenperiode (7×96) für STL-Robustvergleich
   arima:
     enabled: true
     selection: auto                # ACF/PACF + AIC-basiert
