@@ -136,6 +136,10 @@ class ArimaClusteredDetector:
             return None if exog is None else exog.loc[idx]
 
         if fit_end is not None:
+            # tz-robust: naiven date/Timestamp an die (ggf. tz-aware) Reihe angleichen
+            fit_end = pd.Timestamp(fit_end)
+            if getattr(y.index, "tz", None) is not None and fit_end.tz is None:
+                fit_end = fit_end.tz_localize(y.index.tz)
             y_tr = y.loc[:fit_end]
             y_te = y.loc[y.index > fit_end]
             res = SARIMAX(
