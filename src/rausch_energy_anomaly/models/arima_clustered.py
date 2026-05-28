@@ -15,6 +15,7 @@ Hauptmethode A im Methodenvergleich. Vorgehen:
   auf einem Train-Slice gefittet, extendiert ``append(refit=False)`` mit **festen**
   Parametern, sodass spätere Werte die Scores davor nicht beeinflussen.
 """
+
 from __future__ import annotations
 
 import itertools
@@ -55,10 +56,12 @@ class ArimaClusteredDetector:
         z_threshold: float = 3.0,
         use_pmdarima: bool = True,
         seed: int = 42,
+        min_train: int = 100,
     ) -> None:
         self.max_p = max_p
         self.max_q = max_q
         self.max_d = max_d
+        self._min_train = min_train
         self.z_threshold = z_threshold
         self.use_pmdarima = use_pmdarima
         self.seed = seed
@@ -141,10 +144,22 @@ class ArimaClusteredDetector:
             if getattr(y.index, "tz", None) is not None and fit_end.tz is None:
                 fit_end = fit_end.tz_localize(y.index.tz)
             y_tr = y.loc[:fit_end]
+            if len(y_tr) < self._min_train:
+                # Site beginnt (fast) komplett nach fit_end -> kein Train-Slice verfügbar.
+                # Fallback: auf der vollen Site-Reihe fitten (In-Sample-1-Schritt, kein Split).
+                logger.warning(
+                    "Zu wenig Train vor fit_end (%d Punkte) -> Fit auf voller Site-Reihe.",
+                    len(y_tr),
+                )
+                fit_end = None  # in den else-Zweig unten fallen
+        if fit_end is not None:
             y_te = y.loc[y.index > fit_end]
             res = SARIMAX(
-                y_tr, order=order, exog=_exog(y_tr.index),
-                enforce_stationarity=False, enforce_invertibility=False,
+                y_tr,
+                order=order,
+                exog=_exog(y_tr.index),
+                enforce_stationarity=False,
+                enforce_invertibility=False,
             ).fit(disp=False)
             pred_tr = res.get_prediction(dynamic=False)
             mean, se = pred_tr.predicted_mean, pred_tr.se_mean
@@ -155,8 +170,11 @@ class ArimaClusteredDetector:
                 se = pd.concat([se, pred_te.se_mean])
         else:
             res = SARIMAX(
-                y, order=order, exog=_exog(y.index),
-                enforce_stationarity=False, enforce_invertibility=False,
+                y,
+                order=order,
+                exog=_exog(y.index),
+                enforce_stationarity=False,
+                enforce_invertibility=False,
             ).fit(disp=False)
             pred = res.get_prediction(dynamic=False)
             mean, se = pred.predicted_mean, pred.se_mean
