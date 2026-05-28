@@ -30,6 +30,7 @@ dependencies = [
     "holidays>=0.97",       # Feiertage (Default BY)
     "markdown>=3.10.2",     # Doku -> PDF
     "fpdf2>=2.8.7",
+    "pmdarima>=2.1.1",
 ]
 
 [project.optional-dependencies]

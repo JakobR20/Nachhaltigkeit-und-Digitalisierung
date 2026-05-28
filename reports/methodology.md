@@ -35,6 +35,32 @@ es nicht braucht?" entsteht:
   `models/clustering_segments.py`. Der Distanz-Score ist kontinuierlich und damit im
   Methodenvergleich (Schritt 11) direkt neben Z-Score und ARIMA-Residuum stellbar.
 
+## ARIMA: Eingang (Trend+Remainder) und Feiertage
+
+**Warum ARIMA auf der saison-bereinigten Reihe (Trend + Remainder), nicht auf dem reinen
+Remainder?** Wenn die STL ihre Arbeit tut, ist das Remainder annähernd **weißes Rauschen** –
+ein ARIMA darauf wäre **nahezu redundant zum Z-Score** (beide messen dann nur die Streuung
+des Restrauschens). Auf **Trend + Remainder** modelliert ARIMA dagegen echte **Restdynamik
+und Trend** und liefert ein sinnvolles Prädiktionsintervall. Das ist ein bewusstes
+Paper-Argument: Die drei Methoden sollen **unterschiedliche Signale** erfassen
+(Z-Score = Punktausreißer im Remainder; ARIMA = Abweichung von der prognostizierten
+Dynamik; Autoencoder = Rekonstruktionsfehler des Tagesmusters), nicht dasselbe dreimal.
+Saison wird über STL (period=96) entfernt, **nicht** über `s=96` in SARIMAX (bei 15-min zu
+langsam).
+
+**Feiertage als Exogen – empirisch geprüft (kein Annehmen).** Auf dem frischen
+96-Residuum ist die Anomalierate an (bayerischen) Feiertagen im Mittel **~2,3× erhöht**
+(9,97 % vs. 4,35 %), bei großen Standorten stark (Baumarkt_06: 23,6 % vs. 6,4 %), bei
+kleinen kaum. STL absorbiert die **irregulären** Feiertage also **nicht** → `is_holiday`
+als SARIMAX-Exogen ist begründet. Das exogene Array muss für **Train und Forecast
+konsistent** aus demselben Kalender abgeleitet werden (kein Leakage, gleiche Länge/Index).
+
+**Notiz fürs Diagnose-Design (jetzt nur festhalten, nicht lösen):** Feiertage sind
+**erwartbare Anomalien** (Klasse 2 der Operationalisierung), keine Schadschöpfung.
+`is_holiday` gehört perspektivisch generell als **Kontext-Feature in die Diagnose-Schicht**,
+damit nicht jede Methode Feiertage als Fehlalarm meldet – methoden-übergreifend statt je
+Methode einzeln.
+
 ## STL-Periode (96 vs. 168 vs. 672)
 
 Die STL-Saisonperiode ist eine **methodische Entscheidung**, kein Detail. Sie muss zur

@@ -65,9 +65,11 @@ models:
     stl_period_weekly: 672         # optional: Wochenperiode (7×96) für STL-Robustvergleich
   arima:
     enabled: true
-    selection: auto                # ACF/PACF + AIC-basiert
-    seasonal: true
-    one_model_per_cluster: true
+    input: stl_deseasonalized      # Trend+Remainder (Saison via STL entfernt), nicht das reine Remainder
+    selection: auto                # pmdarima.auto_arima; Fallback: AIC-Grid (statsmodels)
+    seasonal: false                # Saison via STL period=96, NICHT via SARIMAX s=96 (zu langsam bei 15-min)
+    one_model_per_cluster: true    # eine Ordnung je Peer-Gruppe, pro Site angewandt
+    exog: [is_holiday]             # empirisch begründet: Anomalierate Feiertag ~2,3x erhöht (methodology.md)
   autoencoder:
     enabled: true
     variants: [dense, lstm]
