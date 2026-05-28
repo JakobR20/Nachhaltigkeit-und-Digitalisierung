@@ -52,7 +52,7 @@ ROOT = Path.cwd().parent if Path.cwd().name == "notebooks" else Path.cwd()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.anomaly.zscore import ZScoreDetector  # noqa: E402
+from rausch_energy_anomaly.models.baseline_zscore import ZScoreDetector  # noqa: E402
 
 ABB = ROOT / "docs" / "konzept" / "abbildungen"
 ABB.mkdir(parents=True, exist_ok=True)
