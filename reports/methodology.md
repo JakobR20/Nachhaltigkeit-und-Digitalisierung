@@ -87,3 +87,22 @@ Beide Perioden (96, 672) sind methodisch begründet; die Tagesperiode 96 ist der
   Feiertags-Bundesland) als Limitation diskutieren.
 - **Übertragbarkeit:** Innerhalb-Kategorie-Generalisierung (trainieren auf N Baumärkten,
   anwenden auf einen weiteren) statt Cross-Category-Transfer (v4 §1.3).
+- **Schwelle X der Segment-Tag-Aggregation (Schritt 11):** Punkt-Methoden werden für den
+  Vergleich auf Segment-Tag hoch-aggregiert. „Irgendein Flag im Segment" (any) bläht die
+  Raten auf (ARIMA ~30 %, Z-Score ~14 % auf Segment-Tag). Statt „any" eine **Anteils-/
+  Mindestdauer-Schwelle** (X % der Segment-Punkte über Threshold) verwenden — X ist selbst
+  ein **Sensitivitätsparameter** und einheitlich für alle Score-Methoden zu variieren.
+- **Ensemble statt „welche gewinnt" (offen für Schritt 11):** κ ≈ 0 zwischen Cluster-Distanz
+  und den Residual-Methoden (κ ≈ 0,45 zwischen Z-Score und ARIMA) zeigt, dass die Methoden
+  **komplementär** sind, nicht redundant. Damit ist „welche Methode gewinnt?" womöglich die
+  falsche Frage; ein **Ensemble** (z. B. Vereinigung/Voting der Flags) kann das ehrlichere
+  Ergebnis sein. Schritt 11 bleibt für **beide Ausgänge** offen.
+
+## Datenqualität (Stand-/Sonderfälle)
+
+- **Baumarkt_23 – nur 2025-Daten (Leakage-Sonderfall):** Diese Site beginnt erst 2025 und
+  hat damit **keinen** Trainingszeitraum (2023–2024). Im Smoke-Lauf greift der ARIMA-Fallback
+  „Fit auf voller Site-Reihe" — das ist für diese eine Site faktisch **Train-auf-Testzeitraum**
+  (Leakage). **Für die finale Auswertung NICHT stillschweigend mitlaufen lassen:** entweder
+  **ganz ausschließen** (zu wenig Historie, empfohlen) oder **transparent als Sonderfall**
+  ausweisen. Entscheidung gilt einheitlich für alle Methoden (inkl. Autoencoder-Train/Test).
