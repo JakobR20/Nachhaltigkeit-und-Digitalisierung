@@ -15,6 +15,26 @@
 Vergleichsmetriken: geschätzte Precision (manuelle Annotation ≈ 200 Punkte), Cohen's Kappa
 (Methodenübereinstimmung), Inferenzzeit pro Standort, qualitative Erklärbarkeit.
 
+## Rolle des Clusterings (zwei klar getrennte Aufgaben)
+
+Das Clustering hat **zwei unterschiedliche Aufgaben** mit **unterschiedlichen Objekten** –
+diese Trennung ist bewusst, damit nicht der Eindruck „wozu Clustering, wenn der Autoencoder
+es nicht braucht?" entsteht:
+
+- **Tagesprofil-Clustering → ausschließlich Voraussetzung für ARIMA.** ARIMA pro Einzelzähler
+  skaliert nicht; daher werden Standorte über ihre mittleren Tagesprofile in **Peer-Gruppen**
+  (k=3, fachlich) zusammengefasst und **ein ARIMA je Gruppe** trainiert. Der **Autoencoder**
+  braucht das **nicht** – er wird **pro Kategorie** trainiert (v4 §1.1). Modul:
+  `models/clustering_daily.py`.
+- **Segment-Clustering (distanzbasiert) → Diagnose-Schicht für ALLE Methoden.** Es beantwortet
+  methoden-agnostisch „ist dieser Segment-Tag untypisch und welche Tageszeit?" – als
+  **kontinuierliche Distanz zum nächsten Cluster-Zentrum** (nicht als Label), je Segment
+  getrennt standardisiert, Schwelle aus den Train-min-Distanzen (Default 99. Perzentil).
+  Weil die Distanz das Signal trägt, ist die Clusterzahl niedrig-sensitiv (Silhouette-Tendenz
+  zu k=2 unkritisch); k=3 je Segment (Mittag k=4, silhouette-getrieben). Modul:
+  `models/clustering_segments.py`. Der Distanz-Score ist kontinuierlich und damit im
+  Methodenvergleich (Schritt 11) direkt neben Z-Score und ARIMA-Residuum stellbar.
+
 ## STL-Periode (96 vs. 168 vs. 672)
 
 Die STL-Saisonperiode ist eine **methodische Entscheidung**, kein Detail. Sie muss zur

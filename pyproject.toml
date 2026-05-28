@@ -11,6 +11,7 @@ dependencies = [
     # ML (klassisch)
     "scikit-learn>=1.4",
     "statsmodels>=0.14",    # STL, SARIMAX
+    "joblib>=1.3",          # Modell-Persistenz
     # Plot
     "matplotlib>=3.8",
     "plotly>=5.20",

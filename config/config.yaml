@@ -20,10 +20,15 @@ co2:
   hourly_source: energy_charts_public_power
 
 clustering:
+  # ROLLE: Tagesprofil-Clustering ist ausschließlich Peer-Gruppierung für ARIMA
+  # (ein ARIMA je Peer-Gruppe). NICHT für den Autoencoder (der wird pro Kategorie
+  # trainiert). Segment-Clustering (unten) ist die Diagnose-Schicht für ALLE Methoden.
   tagesprofile:
     enabled: true
-    k_values: [2, 3, 4, 5]        # Elbow-/Silhouette-Suche
+    k_values: [2, 3, 4, 5]        # Suchraum für Silhouette/Elbow
     dim: 96                        # 24h × 4 Werte (15-min)
+    k_final: 3                     # fachlich: konsistent mit 01_eda (3 typische Tagesprofile),
+                                   # homogene Peer-Gruppen für ARIMA; Silhouette=2 ist nur untere Schranke
   segmente:
     enabled: true
     segments:
@@ -40,7 +45,17 @@ clustering:
         start_hour: 14
         end_hour: 22
     features_per_segment: [mean, max, std, slope]
-    k_values: [2, 3, 4]
+    k_values: [2, 3, 4]            # Suchraum für Silhouette/Elbow
+    # Diagnose via DISTANZ zum nächsten Zentrum -> k niedrig-sensitiv (Distanz trägt das Signal).
+    k_final_per_segment:
+      nachts: 3                    # distanz-robust: genug Prototypen für normale Variabilität
+      vormittag: 3                 # distanz-robust
+      mittag: 4                    # silhouette-getrieben: echte feinere Struktur (Silhouette-Max bei 4)
+      nachmittag: 3                # distanz-robust
+    distance_threshold_percentile: 99.0   # Default; Schwelle aus Train-min-Distanzen je Segment
+    # Alternativen (Threshold-Sensitivität einheitlich in Schritt 11 / method_comparison):
+    # distance_threshold_percentile: 97.5  # mehr Flags
+    # distance_threshold_percentile: 99.9  # weniger Flags
 
 models:
   zscore:
