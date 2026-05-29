@@ -8,8 +8,9 @@ Funktionen:
 - :func:`compare_at_thresholds` — X-Sweep, Flag-Raten + paarweise κ/Jaccard.
 - :func:`precision_from_annotation` — Precision je Methode aus
   ``reports/annotation/annotation.csv`` (siehe Funktions-Doku zum Mapping).
-- :func:`recommend_strategy` — Sieger- oder Ensemble-Empfehlung nach klar
-  definierten Schwellen (Precision-Vorsprung ≥ 15 pp UND κ ≤ 0,6 vs jede).
+- :func:`recommend_strategy` — Sieger- oder Ensemble-Empfehlung über absolute
+  Schwellen: precision ≥ 0,90 UND max κ vs jede andere Methode ≤ 0,40
+  (mehrere Erfüller → Ensemble Union, weil κ ≤ 0,40 Komplementarität beweist).
 - :func:`inference_timing` — Wall-Time fit + score je Methode auf festem
   Sites-Subset (Loader-Lauf einmal).
 - :func:`summary_table` — Markdown-Vergleichstabelle.
@@ -278,23 +279,37 @@ def recommend_strategy(
     pairwise_df: pd.DataFrame,
     x_default: float,
 ) -> tuple[str, str, str]:
-    """Sieger-Methode oder Ensemble auf Basis Precision + Komplementarität.
+    """Sieger-Methode oder Ensemble auf Basis absoluter Precision + Komplementarität.
 
-    **Sieger-Bedingung (eine Methode):** Precision-Vorsprung ≥ 15 pp gegenüber
-    *jeder* anderen Methode UND κ vs *jede* andere Methode ≤ 0,6 (bei
-    ``x_default``). Beides erforderlich: deutlich höhere Precision UND ein
-    Signal, das nicht weitgehend mit den anderen überlappt.
+    **Hintergrund (Felix/Jakob-Annotation, 30.05.2026):** Die Plausibilitäts-
+    Stichprobe wählt absichtlich nur die Top-|score|-Kandidaten je Methode
+    (siehe ``export_annotation``). Erwartung: die Precision auf dieser
+    Stichprobe liegt bei *allen* Methoden hoch — die Differenz zwischen den
+    Methoden trennt nicht. Deshalb keine Vorsprungs-Regel, sondern *absolute*
+    Schwellen: eine Methode hat erst dann Sieger-Status, wenn sie **beide**
+    Kriterien erfüllt:
 
-    **Sonst Ensemble** mit zwei expliziten Use-Case-Varianten:
+    1. ``precision ≥ 0,90`` (Mindest-Plausibilität).
+    2. ``max(κ vs jede andere Methode) ≤ 0,4`` (deutliche Komplementarität —
+       ihre Anomalie-Menge überlappt nicht stark mit den anderen).
 
-    - **Union** (sensitiv, niedrige False-Negative-Rate) → Dashboard.
+    Erfüllt **genau eine** Methode beide → ``single``. Erfüllen **mehrere**
+    Methoden beide → ``ensemble (union)`` — denn die geringe paarweise κ
+    beweist, dass sie **disjunkte** Anomalie-Mengen finden; ein Ensemble
+    summiert komplementäres Wissen statt redundantes. Erfüllt **keine** →
+    ``ensemble (union_or_voting)`` als Fallback.
+
+    Ensemble-Varianten:
+
+    - **Union** (sensitiv, niedrige False-Negative-Rate) → Rausch-Dashboard.
     - **Voting / Mehrheit** (konservativ, höhere Precision) → Pflicht-Report.
 
     Returns ``(strategy, label, rationale)``:
 
     - ``strategy ∈ {"single", "ensemble"}``
-    - ``label``: Methodenname (single) / ``"union_or_voting"`` (ensemble) /
-      ``"to_be_chosen_after_annotation"`` (leere Precision)
+    - ``label``: Methodenname (single) / ``"union"`` (mehrere Erfüller) /
+      ``"union_or_voting"`` (kein Erfüller) /
+      ``"to_be_chosen_after_annotation"`` (leere Precision).
     - ``rationale``: kurzer Begründungssatz für methodology.md.
     """
     if precision_df.empty or precision_df["precision"].isna().all():
@@ -323,37 +338,45 @@ def recommend_strategy(
         if row["method_b"] in kappa_to and not pd.isna(row["kappa"]):
             kappa_to[row["method_b"]].append(float(row["kappa"]))
 
-    winners: list[tuple[str, float, float, float]] = []
+    qualifiers: list[tuple[str, float, float]] = []
     for m in methods:
         p = precisions.get(m)
-        if p is None or pd.isna(p):
+        if p is None or pd.isna(p) or float(p) < 0.90:
             continue
-        others = [precisions[o] for o in methods if o != m and not pd.isna(precisions.get(o))]
-        if not others:
-            continue
-        lead = float(p) - max(others)
         max_k = max(kappa_to[m]) if kappa_to[m] else 0.0
-        if lead >= 0.15 and max_k <= 0.6:
-            winners.append((m, float(p), lead, max_k))
+        if max_k > 0.40:
+            continue
+        qualifiers.append((m, float(p), max_k))
 
-    if winners:
-        winners.sort(key=lambda r: r[1], reverse=True)
-        m, p, lead, mk = winners[0]
+    if len(qualifiers) == 1:
+        m, p, mk = qualifiers[0]
         return (
             "single",
             m,
+            (f"Sieger: '{m}' (precision={p:.2f} ≥ 0,90 UND max κ vs andere = {mk:.2f} ≤ 0,40)."),
+        )
+
+    if len(qualifiers) > 1:
+        names = ", ".join(q[0] for q in qualifiers)
+        return (
+            "ensemble",
+            "union",
             (
-                f"Sieger: '{m}' (precision={p:.2f}, Vorsprung +{lead * 100:.0f} pp gegenüber "
-                f"zweitbestem; max κ vs andere = {mk:.2f} ≤ 0,6)."
+                f"{len(qualifiers)} Methoden erfüllen das Sieger-Kriterium ({names}); "
+                "ihre paarweise κ ≤ 0,40 zeigt, dass sie disjunkte Anomalie-Mengen "
+                "detektieren. Union summiert komplementäres Wissen — "
+                "Default-Ensemble für das Dashboard."
             ),
         )
+
     return (
         "ensemble",
         "union_or_voting",
         (
-            "Keine Methode erfüllt das Sieger-Kriterium (Precision-Vorsprung ≥ 15 pp UND "
-            "κ ≤ 0,6 vs jede andere). Ensemble: Union (sensitiv, Dashboard) oder "
-            "Voting (konservativ, Reporting) je nach Use-Case."
+            "Keine Methode erfüllt das Sieger-Kriterium "
+            "(precision ≥ 0,90 UND max κ vs andere ≤ 0,40). "
+            "Ensemble: Union (sensitiv, Dashboard) oder Voting (konservativ, "
+            "Reporting) je nach Use-Case."
         ),
     )
 

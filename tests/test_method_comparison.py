@@ -235,8 +235,8 @@ def test_recommend_empty_precision():
     assert label == "to_be_chosen_after_annotation"
 
 
-def test_recommend_single_winner():
-    """zscore_stl: precision 0.90, Vorsprung 50pp, κ ≤ 0.6 vs jede → Sieger."""
+def test_recommend_single_winner_when_only_one_qualifies():
+    """Nur zscore_stl erfüllt precision ≥ 0,90 UND max κ ≤ 0,40 → single."""
     precision = pd.DataFrame(
         {
             "method": ["zscore_stl", "arima", "cluster_segment"],
@@ -260,7 +260,7 @@ def test_recommend_single_winner():
 
 
 def test_recommend_ensemble_when_kappa_too_high():
-    """Selbe Precision, aber κ(zscore, arima)=0.8 > 0.6 → kein Sieger."""
+    """Auch wenn precision ≥ 0,90 — κ > 0,40 vs irgendeiner anderen disqualifiziert."""
     precision = pd.DataFrame(
         {
             "method": ["zscore_stl", "arima", "cluster_segment"],
@@ -273,7 +273,7 @@ def test_recommend_ensemble_when_kappa_too_high():
     )
     pairwise = _fake_pairwise(
         {
-            ("zscore_stl", "arima"): 0.80,
+            ("zscore_stl", "arima"): 0.50,  # > 0,40
             ("zscore_stl", "cluster_segment"): 0.10,
             ("arima", "cluster_segment"): 0.20,
         }
@@ -283,8 +283,8 @@ def test_recommend_ensemble_when_kappa_too_high():
     assert label == "union_or_voting"
 
 
-def test_recommend_ensemble_when_lead_too_small():
-    """Vorsprung 10 pp < 15 pp → kein Sieger."""
+def test_recommend_ensemble_when_precisions_all_below_threshold():
+    """Keine Methode erreicht precision ≥ 0,90 → ensemble (union_or_voting)."""
     precision = pd.DataFrame(
         {
             "method": ["zscore_stl", "arima", "cluster_segment"],
@@ -302,8 +302,35 @@ def test_recommend_ensemble_when_lead_too_small():
             ("arima", "cluster_segment"): 0.20,
         }
     )
-    strategy, _, _ = recommend_strategy(precision, pairwise, x_default=0.25)
+    strategy, label, _ = recommend_strategy(precision, pairwise, x_default=0.25)
     assert strategy == "ensemble"
+    assert label == "union_or_voting"
+
+
+def test_recommend_ensemble_union_when_multiple_qualify():
+    """Plausibilitäts-Annotation-Szenario: alle drei precision ≥ 0,90 UND κ alle ≤ 0,40
+    → ensemble (union), weil Komplementarität disjunkte Anomalie-Mengen beweist."""
+    precision = pd.DataFrame(
+        {
+            "method": ["zscore_stl", "arima", "cluster_segment"],
+            "n_labeled": [20, 17, 20],
+            "tp": [20, 17, 20],
+            "fp": [0, 0, 0],
+            "unklar": [0, 0, 0],
+            "precision": [1.00, 1.00, 1.00],
+        }
+    )
+    pairwise = _fake_pairwise(
+        {
+            ("zscore_stl", "arima"): 0.0,
+            ("zscore_stl", "cluster_segment"): 0.0,
+            ("arima", "cluster_segment"): 0.0,
+        }
+    )
+    strategy, label, rationale = recommend_strategy(precision, pairwise, x_default=0.25)
+    assert strategy == "ensemble"
+    assert label == "union"
+    assert "disjunkt" in rationale.lower() or "komplementär" in rationale.lower()
 
 
 # --------------------------------------------------------------------------- #
