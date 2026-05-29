@@ -9,8 +9,9 @@
 | Layer | Methode | Status |
 |-------|---------|--------|
 | Baseline | Z-Score auf STL-Residual | portiert (`models/baseline_zscore.py`) |
-| Haupt A | ARIMA pro Cluster | offen |
-| Haupt B | Autoencoder (Dense + LSTM) pro Kategorie | offen |
+| Haupt A | ARIMA pro Peer-Cluster (auf STL-deseasonalized) | portiert (`models/arima_clustered.py`) |
+| Haupt B | Cluster-Distanz pro Segment | portiert (`models/clustering_segments.py`) |
+| Verworfen | Autoencoder (Dense + LSTM) pro Kategorie | macOS-`model.fit`-Hang auf realer Datengröße (s.u.); Modul bleibt für Linux/CI |
 
 Vergleichsmetriken: geschätzte Precision (manuelle Annotation ≈ 200 Punkte), Cohen's Kappa
 (Methodenübereinstimmung), Inferenzzeit pro Standort, qualitative Erklärbarkeit.
@@ -84,6 +85,44 @@ Methode einzeln.
 - **Struktur-Notiz:** v4 §4 nennt zwei Dateien (`autoencoder_dense.py`, `autoencoder_lstm.py`);
   bewusst zu **einer** Klasse `models/autoencoder.py` mit `variant`-Flag zusammengefasst (weniger
   Duplikat). v4 ist Plan, kein Vertrag.
+
+## Autoencoder: Stage-A-Befund — aus dem Methodenvergleich verworfen (2026-05-29)
+
+**Empirisch festgestellt:** Auf der Entwicklungs-macOS-Box hängt `tf.keras.Model.fit()`
+reproduzierbar in Epoch 1, sobald die Trainingsdaten realistische Größenordnung erreichen
+(Stage A: 2 Baumärkte, 1092 Tagesfenster × 96 Slots, float32, ~750 MB RSS). Der Hang tritt
+auf
+
+- mit und ohne `validation_split`,
+- mit und ohne Callbacks (insbesondere `EarlyStopping`),
+- in **pytest** wie in einem **reinen Python-Skript** (`/tmp/stage_a_minfit.py`),
+- bei `epochs=2` schon im allerersten Epoch (kein Fortschritt nach „Epoch 1/2"),
+- 0 % CPU, nur per `SIGKILL` beendbar.
+
+Abgrenzung: derselbe `AutoencoderDetector` läuft auf dem synthetischen Mini-Datensatz
+(`/tmp/ae_diag.py`, 8 Fenster, `val=0`) in <0,3 s sauber durch. Der Hang ist also
+**scale-bound**, nicht config-bound — vermutlich eine macOS-spezifische
+TF/Keras-3-Threadpool-Interaktion, die sich erst bei mehreren Batches pro Epoch zeigt.
+Drei Diagnose-Iterationen mit harter 5-min-Time-Box reichten zur Entscheidung; weitere
+TF/Threading-Versuche wären spekulativ.
+
+**Konsequenzen für die Auswertung:**
+
+- **Methodenvergleich (Schritt 11) läuft mit drei Methoden:** Z-Score, ARIMA, Cluster-Distanz.
+  Die drei sind nicht ad-hoc gewählt, sondern decken die drei Signal-Familien ab, die wir im
+  Konzept ohnehin trennen (Punkt-/Residual-Outlier, lokal-prognostische Abweichung,
+  form-/segment-untypisch).
+- **AE-Modul (`models/autoencoder.py`) und Driver (`evaluation/scoring.run_autoencoder`)
+  bleiben im Code.** Sie sind auf Linux/CI vermutlich lauffähig (gleicher Standalone-Pfad,
+  ohne macOS-Threadpool); die Tests sind mit `@pytest.mark.skip` markiert
+  (`tests/test_autoencoder.py`), nicht entfernt. Eine Reproduktion auf Linux/CI
+  bleibt für spätere Sessions offen, blockiert das Modul-Ergebnis aber nicht.
+- **Paper-Diskussion:** „Welche Methoden gewinnen?" wird auf den drei portierten Methoden
+  beantwortet; der AE wird als **methodologisch verfolgter, lokal nicht durchführbarer**
+  Pfad im Limitations-Abschnitt offen ausgewiesen — ehrlicher als unter Druck auf eine
+  fragile Variante (kürzerer Train-Slice, reduzierte Epochen) umzubiegen.
+- **κ-Erwartungs-Diskussion (oben) bleibt gültig** als methodische Verortung, aber nicht
+  als empirisch zu validierende Hypothese in diesem Lauf.
 
 ## STL-Periode (96 vs. 168 vs. 672)
 
