@@ -170,11 +170,18 @@ class AutoencoderDetector:
             raise RuntimeError("AutoencoderDetector ist nicht gefittet – erst fit() aufrufen.")
 
     def score(self, series: pd.Series, site: str) -> pd.Series:
-        """Rekonstruktionsfehler je 15-min-Punkt (nur volle Tage). Index = timestamp."""
+        """Rekonstruktionsfehler je 15-min-Punkt (nur volle Tage). Index = timestamp.
+
+        Raises ``ValueError`` wenn ``site`` nicht in ``fit()`` enthalten war – sonst
+        würde der Score-Aufruf einen frischen Scaler auf dem Test-Slice fitten und
+        Leakage erzeugen. Driver muss zuerst fit() mit allen Ziel-Sites aufrufen.
+        """
         self._check_fitted()
-        scaler = self.scalers_.get(site) or StandardScaler().fit(
-            pd.to_numeric(series, errors="coerce").dropna().to_numpy(dtype=float).reshape(-1, 1)
-        )
+        scaler = self.scalers_.get(site)
+        if scaler is None:
+            raise ValueError(
+                f"Unbekannte Site {site!r} – nur gefittete Sites zulässig: {sorted(self.scalers_)}"
+            )
         win = _day_windows(series)
         if not len(win):
             return pd.Series(dtype=float, name="error")

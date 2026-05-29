@@ -156,6 +156,98 @@ def run_all_methods(
     return out
 
 
+def _setup_autoencoder(
+    category: str,
+    sites: list[str] | None,
+    exclude: tuple[str, ...],
+    variant: str,
+    fit_end: pd.Timestamp,
+    **detector_kwargs: object,
+):
+    """Lädt Kategorie, filtert Sites (vmax≥1 kW, ohne ``exclude``), fittet den AE.
+
+    Liefert ``(detector, series_by_site, sites)``. Wiederverwendbar für Stage-B-
+    Anomalie-Injection (gleicher gefitteter Detector, ohne Re-Train).
+    """
+    from rausch_energy_anomaly.models.autoencoder import AutoencoderDetector
+
+    df = loader.load_category(category)
+    vmax = df.groupby(level="meter_id")["value_kw"].max()
+    solid = sorted(vmax[vmax >= 1.0].index)
+    sites = [s for s in (sites or solid) if s not in exclude]
+    logger.info(
+        "AE-Setup %s: %d Site(s) (variant=%s, exclude=%s)", category, len(sites), variant, exclude
+    )
+    series_by_site = {s: df.xs(s, level="meter_id")["value_kw"] for s in sites}
+    det = AutoencoderDetector(variant=variant, **detector_kwargs).fit(
+        series_by_site, fit_end=fit_end
+    )
+    return det, series_by_site, sites
+
+
+def run_autoencoder(
+    category: str = "Baumärkte",
+    sites: list[str] | None = None,
+    exclude: tuple[str, ...] = ("Baumarkt_23",),
+    variant: str = "dense",
+    config_path: str | Path | None = None,  # noqa: ARG001  (Schema-Symmetrie zu run_all_methods)
+    write: bool = True,
+    fit_end: pd.Timestamp | None = None,
+    **detector_kwargs: object,
+) -> pd.DataFrame:
+    """Scort den per-Kategorie-Autoencoder ins gemeinsame native Format.
+
+    Native: ``granularity="point"``, ``segment=None``, ``method="autoencoder"``.
+    DST-/Teiltage erscheinen explizit als NaN-Zeilen (``score=NaN``, ``flag=pd.NA``),
+    damit Schritt 11 „kein Score" sauber von „Score=0" trennt. Sites in ``exclude``
+    (Default: Baumarkt_23 – nur 2025-Daten → leerer Train-Slice) entfallen vor fit().
+    Bei ``write=True`` werden bestehende ``method=="autoencoder"``-Zeilen im Parquet
+    durch den neuen Lauf ersetzt (idempotent).
+    """
+    if fit_end is None:
+        fit_end = pd.Timestamp("2024-12-31 23:45", tz="Europe/Berlin")
+
+    det, series_by_site, sites = _setup_autoencoder(
+        category, sites, exclude, variant, fit_end, **detector_kwargs
+    )
+
+    frames: list[pd.DataFrame] = []
+    for s in sites:
+        series = series_by_site[s]
+        err = det.score(series, s)  # nur volle 96-Slot-Tage
+        err_full = err.reindex(series.index)  # NaN an DST-/Teiltagen
+        flag = pd.array([pd.NA] * len(err_full), dtype="boolean")
+        valid = err_full.notna().to_numpy()
+        flag[valid] = err_full.to_numpy()[valid] > det.threshold_
+        frames.append(
+            pd.DataFrame(
+                {
+                    "site": s,
+                    "timestamp": err_full.index,
+                    "method": "autoencoder",
+                    "score": err_full.to_numpy(dtype=float),
+                    "flag": flag,
+                    "granularity": "point",
+                    "segment": pd.NA,
+                }
+            )
+        )
+    out = pd.concat(frames, ignore_index=True)[_SCHEMA]
+
+    if write:
+        path = _ROOT / "data" / "processed" / "anomaly_scores.parquet"
+        if path.exists():
+            existing = pd.read_parquet(path)
+            existing = existing[existing["method"] != "autoencoder"].copy()
+            existing["flag"] = existing["flag"].astype("boolean")
+            combined = pd.concat([existing, out], ignore_index=True)[_SCHEMA]
+        else:
+            combined = out
+        combined.to_parquet(path, index=False)
+        logger.info("geschrieben: %s (%d AE-Zeilen, %d gesamt)", path, len(out), len(combined))
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Vergleich: HOCH-Aggregation auf (site, date, segment)
 # --------------------------------------------------------------------------- #
