@@ -61,6 +61,30 @@ konsistent** aus demselben Kalender abgeleitet werden (kein Leakage, gleiche Lä
 damit nicht jede Methode Feiertage als Fehlalarm meldet – methoden-übergreifend statt je
 Methode einzeln.
 
+## Autoencoder: Eingangssignal und Normierung (bewusste Designentscheidung)
+
+- **Eingang = roher 24h-Lastgang** (Variante A), **nicht** das STL-Residual. Damit lernt der
+  AE die Saisonalität selbst und misst Abweichungen vom typischen Tagesmuster. Konsequenz für
+  die Signal-Familien: **AE + Cluster arbeiten auf dem Rohsignal (Form), Z-Score + ARIMA auf
+  dem STL-Residual (Punkt-/Niveauabweichung)**. Gleiche Eingangssignale sind in Schritt 11
+  erwartbar höher korreliert — die κ-Werte sind entsprechend zu lesen.
+- **Normierung pro Site** (StandardScaler, auf Train gefittet) — bewusst **nicht** pro Fenster:
+  - **Fängt Form *und* site-internes Niveau.** Ein Tag mit normaler Form, aber durchgehend
+    erhöhtem Niveau (z. B. Nacht-Basislast ~18–22 statt ~6 kW = durchlaufende Heizung) bleibt
+    im Standard-Raum erhöht → hoher Rekonstruktionsfehler → wird geflaggt. **Genau diese
+    Niveau-Verschwendung soll das Projekt finden** — pro-Fenster-Normierung (form-only) würde
+    sie glattrekonstruieren und **verfehlen**.
+  - **Was der AE NICHT fängt:** reine **Zwischen-Site-Magnitude** (ist wegnormiert) — gewollt,
+    sonst dominiert die größte Site das eine Kategorie-Modell.
+- **κ-Erwartung (revidiert):** Der AE ist durch Form + site-internes Niveau ein **breiterer**
+  Detektor und damit **moderat zu ALLEN** anderen Methoden korreliert — eine **Brücke**
+  zwischen der Form-Familie (Cluster) und der Niveau-/Punkt-Familie (Z-Score, ARIMA), **nicht**
+  speziell hoch nur zu Cluster. (Die frühere Erwartung κ(AE,Cluster) > κ(AE,Z-Score) war an die
+  form-only-Normierung gekoppelt und ist verworfen.)
+- **Struktur-Notiz:** v4 §4 nennt zwei Dateien (`autoencoder_dense.py`, `autoencoder_lstm.py`);
+  bewusst zu **einer** Klasse `models/autoencoder.py` mit `variant`-Flag zusammengefasst (weniger
+  Duplikat). v4 ist Plan, kein Vertrag.
+
 ## STL-Periode (96 vs. 168 vs. 672)
 
 Die STL-Saisonperiode ist eine **methodische Entscheidung**, kein Detail. Sie muss zur
