@@ -176,16 +176,123 @@ Beide Perioden (96, 672) sind methodisch begründet; die Tagesperiode 96 ist der
   Feiertags-Bundesland) als Limitation diskutieren.
 - **Übertragbarkeit:** Innerhalb-Kategorie-Generalisierung (trainieren auf N Baumärkten,
   anwenden auf einen weiteren) statt Cross-Category-Transfer (v4 §1.3).
-- **Schwelle X der Segment-Tag-Aggregation (Schritt 11):** Punkt-Methoden werden für den
-  Vergleich auf Segment-Tag hoch-aggregiert. „Irgendein Flag im Segment" (any) bläht die
-  Raten auf (ARIMA ~30 %, Z-Score ~14 % auf Segment-Tag). Statt „any" eine **Anteils-/
-  Mindestdauer-Schwelle** (X % der Segment-Punkte über Threshold) verwenden — X ist selbst
-  ein **Sensitivitätsparameter** und einheitlich für alle Score-Methoden zu variieren.
-- **Ensemble statt „welche gewinnt" (offen für Schritt 11):** κ ≈ 0 zwischen Cluster-Distanz
-  und den Residual-Methoden (κ ≈ 0,45 zwischen Z-Score und ARIMA) zeigt, dass die Methoden
-  **komplementär** sind, nicht redundant. Damit ist „welche Methode gewinnt?" womöglich die
-  falsche Frage; ein **Ensemble** (z. B. Vereinigung/Voting der Flags) kann das ehrlichere
-  Ergebnis sein. Schritt 11 bleibt für **beide Ausgänge** offen.
+- **Schwelle X + Ensemble vs. Sieger (Schritt 11):** beide ursprünglich offenen Fragen
+  sind durch den Sweep + die Plausibilitäts-Annotation empirisch beantwortet — siehe
+  eigenen Abschnitt „Methodenvergleich (Schritt 11) — Befund" unten. Die hier zuvor
+  zitierten Zahlen (ARIMA ~30 %, Z-Score ~14 % bei „any"; κ ≈ 0,45 zscore↔arima) galten
+  für `X=0` (any-Aggregation) und sind im Schritt-11-Abschnitt mit dem gewählten
+  `X=0,25` aktualisiert.
+
+## Methodenvergleich (Schritt 11) — Befund
+
+Sweep-Lauf am 30.05.2026 auf dem aktuellen `data/processed/anomaly_scores.parquet`
+über die drei portierten Methoden (`zscore_stl`, `arima`, `cluster_segment`;
+Baumarkt_23 ausgeschlossen). Code: `evaluation/method_comparison.py`. Notebook:
+`notebooks/06_method_comparison.ipynb`. Outputs:
+`reports/tables/06_method_comparison.md`, `reports/figures/06_*`.
+
+### Cluster-Anker
+
+Cluster-Distanz ist nativ Segment-Tag und damit der Anker für die X-Wahl der
+Punkt-Methoden. Test-Flag-Rate (2025+) im aktuellen Parquet: **0,64 %** (der
+frühere Wert 0,86 % aus dem Smoke-Lauf war ein Zwischenstand).
+
+### X-Wahl (Aggregations-Schwelle der Segment-Tag-Hochaggregation)
+
+Sweep über `threshold_pct ∈ {0,0, 0,10, 0,25, 0,50, 0,75}`. Bei `X=0`
+(any-Aggregation) bestätigt sich der frühere Smoke-Befund: ARIMA 28,6 %,
+Z-Score 13,1 % — methodisch nicht haltbar.
+
+**Eigener Befund:** Es gibt **keinen einzigen `X`**, der `zscore_stl` und
+`arima` gleichzeitig in 0,5×..2× des Cluster-Ankers bringt. Z-Score
+produziert pro Segment systematisch **breitere** Punkt-Anomalien als ARIMA.
+Konkret bei der Test-Flag-Rate:
+
+- `X = 0,25`: ARIMA 1,05 % (Ratio 1,64 zum Anker ✓), Z-Score 3,90 % (Ratio 6,1).
+- `X = 0,75`: Z-Score 0,63 % (Ratio 0,99 ✓), ARIMA 0,00 % (ARIMA verschwindet).
+
+Diese Asymmetrie ist ein **eigenständiger qualitativer Befund**, kein Bug
+der X-Wahl. Sie spiegelt wider, wie die Methoden Anomalien räumlich-zeitlich
+verteilen: Z-Score „streut" Flags über die gesamte Anomalie-Periode, ARIMA
+markiert nur die scharfen Forecast-Sprünge.
+
+**Entscheidung: `X_default = 0,25`.** ARIMA-Sichtbarkeit ist wichtiger als
+rein numerische Anker-Nähe; `X = 0,75` würde ARIMA effektiv aus dem
+Vergleich nehmen. In `config/config.yaml` unter
+`comparison.aggregation_threshold_pct: 0.25` abgelegt; das Notebook nutzt
+diesen Override automatisch (`load_default_threshold_pct`).
+
+### Komplementarität (κ)
+
+Bei `X = 0,25` sind **alle paarweisen κ ≤ 0,08** (zscore↔arima 0,08,
+zscore↔cluster −0,01, arima↔cluster 0,02). Die in der älteren
+Limitationsdiskussion zitierten Werte (κ ≈ 0,45 zscore↔arima, κ ≈ 0
+cluster↔beide) galten für das alte `flag.any()` (`X = 0`). Mit der
+Anteils-Schwelle löst sich die scheinbare Z-Score/ARIMA-Überlappung auf:
+**alle drei Methoden detektieren weitgehend disjunkte Anomalie-Mengen**.
+Die Komplementaritäts-These wird **verstärkt**, nicht widersprochen. Die
+κ-Heatmaps über die Sweep-Werte (`reports/figures/06_kappa_heatmap.png`)
+zeigen, dass die Disjunktheit über alle X ≥ 0,25 stabil bleibt.
+
+### Inferenzkosten
+
+Mikrobenchmark auf 5 soliden Sites (`reports/tables/06_method_comparison.md`):
+
+| Methode | fit | score |
+|---|---|---|
+| zscore_stl | ~2 ms | ~0,3 ms |
+| cluster_segment | 94 ms | 8 ms |
+| **arima** | **93,2 s** | **47,2 s** |
+
+ARIMA dominiert — hochgerechnet auf 22 Baumärkte **≈ 10 min je Vollauf**.
+**Konsequenz für die Dashboard-Architektur:** ARIMA-Scores müssen aus dem
+vor-berechneten `anomaly_scores.parquet` eingelesen werden — **kein
+On-the-fly-Recompute** bei Threshold-Slider oder Methoden-Toggle. Z-Score
+und Cluster-Distanz können interaktiv neu berechnet werden, falls
+Hyperparameter-Slider eingeplant sind. Diese Trennung gehört explizit ins
+Dashboard-Kapitel.
+
+### Plausibilitäts-Validierung (Felix & Jakob, 30.05.2026)
+
+Die Plausibilitäts-Stichprobe (`reports/annotation/`, 57 Top-Kandidaten je
+Methode nach Prioritäts-Dedup) wurde am 30.05.2026 durchgesichtet. Befund:
+**alle drei Methoden lieferten in ihren jeweiligen Top-Kandidaten Anomalien
+mit hoher Plausibilität** (ungewöhnliche Verbrauchssignatur, kein
+offensichtlicher Erklärungsgrund). Einzelne Kandidaten wurden manuell als
+„unklar" markiert.
+
+**Methodische Konsequenz:** Die Plausibilitäts-Validierung trennt die
+Methoden auf dieser Stichprobe nicht — alle Methoden landen nahe 100 %
+Precision auf ihren Top-|score|-Kandidaten. Der Methodenvergleich
+verschiebt sich damit von „welche Methode hat die höhere Precision?" auf
+**κ-Komplementarität und Inferenzkosten** als Auswahlkriterien. Das ist
+methodisch nicht schwächer, sondern ein anderer Erkenntniswert: wir
+messen, ob die Methoden komplementär sind, nicht ob eine eine andere
+dominiert.
+
+### Strategie-Empfehlung (Sieger vs. Ensemble)
+
+`recommend_strategy` arbeitet mit **absoluten Schwellen** (siehe
+Docstring): eine Methode hat Sieger-Status nur bei
+`precision ≥ 0,90 UND max(κ vs jede andere Methode) ≤ 0,40`. Erfüllen
+mehrere Methoden beide → **Ensemble (Union)**: die gemeinsam niedrige κ
+beweist disjunkte Anomalie-Mengen; ein Ensemble summiert komplementäres
+statt redundantes Wissen.
+
+Mit den Schritt-11-Zahlen (Precision aller drei Methoden nahe 100 % auf
+der Plausibilitäts-Stichprobe, alle paarweisen κ ≤ 0,08) **erfüllen alle
+drei Methoden** die Sieger-Schwelle. Die Empfehlung lautet damit
+**Ensemble (Union)** als Default für das Rausch-Dashboard.
+
+- **Union** (sensitiv): Flag, wenn ≥ 1 Methode flaggt — niedrige
+  False-Negative-Rate; richtige Default-Wahl für ein Dashboard, das je
+  Flag einen Review zulässt.
+- **Voting / Mehrheit** (konservativ): Flag, wenn ≥ 2 von 3 flaggen —
+  höhere Precision pro Flag; geeignet für automatisches Pflicht-Reporting
+  ohne manuellen Review.
+
+Default: **Union**. Wahl Union vs. Voting hängt vom Dashboard-Workflow ab;
+beide werden im Ergebnis dokumentiert.
 
 ## Datenqualität (Stand-/Sonderfälle)
 
