@@ -27,6 +27,12 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+# macOS-fit-Hang-Recovery: tf.keras über das tf-keras-Maintenance-Paket (Keras 2)
+# bedienen statt über das standalone Keras 3. Der Hang in model.fit auf realer
+# Größenordnung (>=1000 Tagesfenster) ist ein Keras-3-Spezifikum auf macOS; unter
+# TF 2.16 + Keras 2 läuft Stage A in <60 s durch. Muss vor jedem tf-/keras-Import
+# stehen, deshalb auf Modulebene und nicht in conftest.py.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 # TF-Logs stummschalten, BEVOR TensorFlow importiert wird. Wichtig auch fürs
 # Produktiv-Scoring: TFs stderr-Flut deadlockt sonst eine stderr-Pipe (siehe der
 # grep-Pipe-Hang). Konsumenten (scoring.py-Driver) erben diese Einstellung.
