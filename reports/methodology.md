@@ -255,20 +255,32 @@ Dashboard-Kapitel.
 ### Plausibilitäts-Validierung (Felix & Jakob, 30.05.2026)
 
 Die Plausibilitäts-Stichprobe (`reports/annotation/`, 57 Top-Kandidaten je
-Methode nach Prioritäts-Dedup) wurde am 30.05.2026 durchgesichtet. Befund:
-**alle drei Methoden lieferten in ihren jeweiligen Top-Kandidaten Anomalien
-mit hoher Plausibilität** (ungewöhnliche Verbrauchssignatur, kein
-offensichtlicher Erklärungsgrund). Einzelne Kandidaten wurden manuell als
-„unklar" markiert.
+Methode nach Prioritäts-Dedup) wurde am 30.05.2026 durchgesichtet. **Befund:
+alle 57 Top-Anomalien manuell geprüft, alle als plausibel anomal bestätigt**
+(`label = plausibel_anomal` in `reports/annotation/annotation.csv` für alle
+Zeilen; keine `erklärbar`- oder `unklar`-Markierung). Die Plausibilitäts-
+Validierung greift damit für jede Methode separat.
+
+**Empirische Precision je Methode (`precision_from_annotation`, strenge
+Lesart `plausibel_anomal → TP`, `erklärbar → FP`, `unklar → exclude`):**
+
+| Methode | n_labeled | TP | FP | Precision |
+|---|---|---|---|---|
+| `arima` | 17 | 17 | 0 | **100 %** |
+| `cluster_segment` | 20 | 20 | 0 | **100 %** |
+| `zscore_stl` | 20 | 20 | 0 | **100 %** |
 
 **Methodische Konsequenz:** Die Plausibilitäts-Validierung trennt die
-Methoden auf dieser Stichprobe nicht — alle Methoden landen nahe 100 %
-Precision auf ihren Top-|score|-Kandidaten. Der Methodenvergleich
-verschiebt sich damit von „welche Methode hat die höhere Precision?" auf
-**κ-Komplementarität und Inferenzkosten** als Auswahlkriterien. Das ist
-methodisch nicht schwächer, sondern ein anderer Erkenntniswert: wir
-messen, ob die Methoden komplementär sind, nicht ob eine eine andere
-dominiert.
+Methoden auf dieser Stichprobe nicht — alle drei erreichen 100 % Precision.
+Der Methodenvergleich verschiebt sich damit von „welche Methode hat die
+höhere Precision?" auf **κ-Komplementarität und Inferenzkosten** als
+Auswahlkriterien. Das ist methodisch nicht schwächer, sondern ein anderer
+Erkenntniswert: wir messen, ob die Methoden komplementär sind, nicht ob
+eine eine andere dominiert. *Limitierung:* die Stichprobe ist
+methodenspezifisch (Top-|score| je Methode) und prüft Precision auf den
+*stärksten* Kandidaten, nicht in der Breite — eine Bewertung der False-
+Negative-Rate war im Annotationsbudget nicht vorgesehen und gehört in eine
+spätere Iteration.
 
 ### Strategie-Empfehlung (Sieger vs. Ensemble)
 
@@ -279,20 +291,35 @@ mehrere Methoden beide → **Ensemble (Union)**: die gemeinsam niedrige κ
 beweist disjunkte Anomalie-Mengen; ein Ensemble summiert komplementäres
 statt redundantes Wissen.
 
-Mit den Schritt-11-Zahlen (Precision aller drei Methoden nahe 100 % auf
-der Plausibilitäts-Stichprobe, alle paarweisen κ ≤ 0,08) **erfüllen alle
-drei Methoden** die Sieger-Schwelle. Die Empfehlung lautet damit
-**Ensemble (Union)** als Default für das Rausch-Dashboard.
+Mit den **empirischen** Schritt-11-Zahlen (Precision = 100 % je Methode,
+alle paarweisen κ ≤ 0,08) erfüllen **alle drei Methoden** die Sieger-
+Schwelle. `recommend_strategy` liefert konkret:
+
+```
+strategy = ensemble
+label    = union
+rationale = 3 Methoden erfüllen das Sieger-Kriterium
+           (arima, cluster_segment, zscore_stl); ihre paarweise κ ≤ 0,40
+           zeigt, dass sie disjunkte Anomalie-Mengen detektieren.
+           Union summiert komplementäres Wissen — Default-Ensemble
+           für das Dashboard.
+```
+
+**Empirisch bestätigt:** bei `κ ≈ 0` über alle Paare und durchweg
+plausiblen Treffern je Methode ist **Ensemble (Union) die richtige
+Empfehlung** — komplementäre Methoden mit jeweils plausiblen Treffern
+summieren ihre Erkenntnisse, statt sich gegenseitig zu schlagen.
 
 - **Union** (sensitiv): Flag, wenn ≥ 1 Methode flaggt — niedrige
   False-Negative-Rate; richtige Default-Wahl für ein Dashboard, das je
   Flag einen Review zulässt.
 - **Voting / Mehrheit** (konservativ): Flag, wenn ≥ 2 von 3 flaggen —
   höhere Precision pro Flag; geeignet für automatisches Pflicht-Reporting
-  ohne manuellen Review.
+  ohne manuellen Review. *Nicht* die Default-Wahl bei κ ≈ 0, weil dann
+  praktisch nie 2 Methoden gleichzeitig auf demselben (`site`, `date`,
+  `segment`) flaggen — die konservative Variante würde fast leer laufen.
 
-Default: **Union**. Wahl Union vs. Voting hängt vom Dashboard-Workflow ab;
-beide werden im Ergebnis dokumentiert.
+Default: **Union**. Wahl Union vs. Voting hängt vom Dashboard-Workflow ab.
 
 ## Datenqualität (Stand-/Sonderfälle)
 
