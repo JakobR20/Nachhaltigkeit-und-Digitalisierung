@@ -44,7 +44,7 @@ SEGMENT_HOURS: dict[str, tuple[int, int]] = {
     "mittag": (11, 14),
     "nachmittag": (14, 22),
 }
-METHOD_PRIORITY = {"zscore_stl": 0, "arima": 1, "cluster_segment": 2}
+METHOD_PRIORITY = {"zscore_stl": 0, "arima": 1, "cluster_segment": 2, "autoencoder": 3}
 EXCLUDE_SITES: tuple[str, ...] = ("Baumarkt_23",)
 N_PER_METHOD = 20
 CONTEXT_DAYS = 3
@@ -265,6 +265,103 @@ def main() -> None:
         out_csv.name,
         _OUT.relative_to(_ROOT),
     )
+
+
+def append_autoencoder_candidates(
+    annotation_csv: Path | None = None, n_per_method: int = N_PER_METHOD
+) -> int:
+    """Append AE-Top-Kandidaten an die bestehende ``annotation.csv`` (idempotent).
+
+    Bestehende Zeilen werden NICHT überschrieben (auch nicht ``also_flagged_by``);
+    die Funktion hängt ausschließlich neue AE-Kandidaten an, deren
+    ``(site, timestamp)`` noch nicht in der CSV ist. Plots werden mit fortlaufender
+    ``nr`` (ab ``len(existing) + 1``) erzeugt.
+
+    Returns die Anzahl neu angehängter Zeilen.
+    """
+    import csv
+
+    path = Path(annotation_csv) if annotation_csv is not None else (_OUT / "annotation.csv")
+    if not path.exists():
+        raise FileNotFoundError(f"annotation.csv fehlt: {path}")
+
+    with open(path, newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    header = rows[0]
+    existing = rows[1:]
+    site_idx, ts_idx = header.index("site"), header.index("timestamp")
+    existing_keys = {(r[site_idx], pd.Timestamp(r[ts_idx])) for r in existing}
+    next_nr = len(existing) + 1
+
+    logger.info("Lade %s + %s", _SCORES.name, _SEG_FEATURES.name)
+    scores = pd.read_parquet(_SCORES)
+    scores = scores[~scores["site"].isin(EXCLUDE_SITES)].copy()
+    seg_features = pd.read_parquet(_SEG_FEATURES)
+
+    deduped = select_candidates(scores, n_per_method=n_per_method)
+    deduped = filter_incomplete(deduped, seg_features)
+
+    ae = deduped[deduped["method"] == "autoencoder"].reset_index(drop=True)
+    new_mask = ae.apply(lambda r: (r["site"], r["timestamp"]) not in existing_keys, axis=1)
+    new = ae[new_mask].reset_index(drop=True)
+    logger.info(
+        "AE-Top-%d nach Prioritäts-Dedup: %d Zeilen; nach existing-Filter: %d neu",
+        n_per_method,
+        len(ae),
+        len(new),
+    )
+    if not len(new):
+        return 0
+
+    logger.info("Lade Lastgang-Kategorie (~45 s) ...")
+    df = rlm_loader.load_category("Baumärkte")
+    hol = _holiday_dates()
+
+    appended_rows: list[list[str]] = []
+    for offset, (_, c) in enumerate(new.iterrows(), start=0):
+        nr = next_nr + offset
+        site = c["site"]
+        t = c["timestamp"]
+        series = df.xs(site, level="meter_id")["value_kw"]
+        window = series.loc[
+            t - pd.Timedelta(days=CONTEXT_DAYS) : t + pd.Timedelta(days=CONTEXT_DAYS)
+        ]
+        plot_name = f"plot_{nr:03d}.png"
+        is_holiday = t.date() in hol
+        build_plot(
+            window, c, _OUT / plot_name, rang=int(c["rang_in_methode"]), is_holiday=is_holiday
+        )
+        appended_rows.append(
+            [
+                str(nr),
+                site,
+                t.isoformat() if hasattr(t, "isoformat") else str(t),
+                c["method"],
+                repr(float(c["score"])),
+                str(int(c["rang_in_methode"])),
+                _derive_segment(c) or "",
+                t.day_name(),
+                "ja" if is_holiday else "nein",
+                plot_name,
+                c["also_flagged_by"],
+                "",
+                "",
+            ]
+        )
+
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        for row in appended_rows:
+            w.writerow(row)
+
+    logger.info(
+        "appended %d AE-Kandidaten (nr %d..%d) an %s",
+        len(appended_rows),
+        next_nr,
+        next_nr + len(appended_rows) - 1,
+        path.relative_to(_ROOT),
+    )
+    return len(appended_rows)
 
 
 if __name__ == "__main__":
