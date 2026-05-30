@@ -339,8 +339,8 @@ def test_recommend_ensemble_union_when_multiple_qualify():
 def test_summary_table_contains_methods(mini_scores):
     flag_rates, pairwise = compare_at_thresholds(mini_scores, thresholds=(0.25,))
     md = summary_table(flag_rates, pairwise, x_default=0.25)
-    for m in ("zscore_stl", "arima", "cluster_segment"):
-        assert m in md
+    for m in ("zscore_stl", "arima", "cluster_segment", "autoencoder"):
+        assert m in md, f"Methode {m!r} fehlt im summary_table"
     assert "| Methode |" in md
 
 

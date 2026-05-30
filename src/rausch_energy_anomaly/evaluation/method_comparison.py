@@ -48,16 +48,19 @@ _NATIVE_GRANULARITY = {
     "zscore_stl": "point (15 min)",
     "arima": "point (15 min)",
     "cluster_segment": "segment_day",
+    "autoencoder": "point (15 min)",
 }
 _STRENGTH = {
     "zscore_stl": "Punkt-Outlier auf STL-Residual; transparent, schnell",
     "arima": "Lokal-prognostische Abweichung, Peer-Gruppen-Sensitivität",
     "cluster_segment": "Form-/Segment-untypisch; methoden-agnostische Diagnose",
+    "autoencoder": "Form-/Niveau-Abweichung im 24h-Lastgang; pro-Site-normiert, deep",
 }
 _WEAKNESS = {
     "zscore_stl": "Schwellwert manuell, Niveau-Drift schlecht erfasst",
     "arima": "Sensitiv gegen Train-Bias, langsamer",
     "cluster_segment": "Keine 15-min-Lokalisierung im Segment",
+    "autoencoder": "DST-/Teiltage werden NaN; Zwischen-Site-Magnitude wegnormiert",
 }
 
 
@@ -491,6 +494,26 @@ def inference_timing(
             "method": "cluster_segment",
             "wall_time_fit_s": c_fit,
             "wall_time_score_s": c_score,
+            "n_sites": len(sites),
+        }
+    )
+
+    # 4) Autoencoder (Dense, ein Modell über alle Sites; Default-Hyperparameter)
+    from rausch_energy_anomaly.models.autoencoder import AutoencoderDetector
+
+    series_by_site_ae = {s: df.xs(s, level="meter_id")["value_kw"] for s in sites}
+    t0 = time.time()
+    ae = AutoencoderDetector(variant="dense").fit(series_by_site_ae, fit_end=train_end)
+    ae_fit = time.time() - t0
+    t0 = time.time()
+    for s in sites:
+        ae.score(series_by_site_ae[s], s)
+    ae_score = time.time() - t0
+    rows.append(
+        {
+            "method": "autoencoder",
+            "wall_time_fit_s": ae_fit,
+            "wall_time_score_s": ae_score,
             "n_sites": len(sites),
         }
     )
