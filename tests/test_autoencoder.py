@@ -13,12 +13,6 @@ import pytest
 
 from rausch_energy_anomaly.models.autoencoder import AutoencoderDetector
 
-# pytest+TF model.fit() hangs on macOS (reproduced with core pytest only — no plugins,
-# no conftest); identical code runs in <0.3 s as a plain script. Module is verified via
-# the standalone diagnostic and the real-data scoring driver. See CLAUDE.md §8
-# "Lesson Learned (2026-05-29)".
-_FIT_HANG_REASON = "pytest+TF fit() hangs on macOS — see CLAUDE.md Lesson Learned 2026-05-29"
-
 
 def _series(seed: int, n_days: int = 4, anomaly_day: int | None = None) -> pd.Series:
     n = n_days * 96
@@ -51,7 +45,6 @@ def test_predict_before_fit_raises():
         AutoencoderDetector().predict(_series(0), "A")
 
 
-@pytest.mark.skip(reason=_FIT_HANG_REASON)
 def test_fit_score_predict_runs_and_schema():
     det = _tiny("dense").fit(_sites())
     err = det.score(_series(0), "A")
@@ -61,14 +54,12 @@ def test_fit_score_predict_runs_and_schema():
     assert pred.index.equals(err.index)
 
 
-@pytest.mark.skip(reason=_FIT_HANG_REASON)
 def test_lstm_variant_runs():
     det = _tiny("lstm").fit(_sites())
     err = det.score(_series(0), "A")
     assert len(err) > 0 and err.notna().all()
 
 
-@pytest.mark.skip(reason=_FIT_HANG_REASON)
 def test_save_load_roundtrip(tmp_path):
     det = _tiny("dense").fit(_sites())
     test = _series(0)
@@ -78,7 +69,6 @@ def test_save_load_roundtrip(tmp_path):
 
 
 @pytest.mark.slow
-@pytest.mark.skip(reason=_FIT_HANG_REASON)
 def test_level_anomaly_has_higher_reconstruction_error():
     """Konvergenzabhängig -> @slow (nicht im Default-Lauf)."""
     det = AutoencoderDetector(variant="dense", epochs=30, seed=0).fit(_sites(n_days=40))

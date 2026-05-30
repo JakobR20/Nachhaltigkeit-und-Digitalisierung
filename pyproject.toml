@@ -46,7 +46,11 @@ dashboard = [
 deep = [
     # Hauptmethode B: Autoencoder (Dense + LSTM). Schwer/groß -> separat installieren:
     #   uv sync --extra deep
-    "tensorflow>=2.16",
+    # TF 2.16 + tf-keras (Keras 2) statt TF 2.21 + Keras 3: löst den macOS-fit-Hang
+    # auf realer Datengröße (s. autoencoder.py-Modulkommentar). Beide Versionen
+    # exakt gepinnt, weil tf-keras-Versionen 1:1 an TF-Versionen koppeln.
+    "tensorflow==2.16.2",
+    "tf-keras==2.16.0",
 ]
 
 [build-system]

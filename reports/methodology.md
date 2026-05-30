@@ -4,14 +4,14 @@
 > Methodenentscheidung fürs Dashboard wird hier nach dem Methodenvergleich (v4 §5
 > Schritt 11+12) dokumentiert.
 
-## Methodenvergleich (drei Methoden)
+## Methodenvergleich (vier Methoden)
 
 | Layer | Methode | Status |
 |-------|---------|--------|
 | Baseline | Z-Score auf STL-Residual | portiert (`models/baseline_zscore.py`) |
 | Haupt A | ARIMA pro Peer-Cluster (auf STL-deseasonalized) | portiert (`models/arima_clustered.py`) |
 | Haupt B | Cluster-Distanz pro Segment | portiert (`models/clustering_segments.py`) |
-| Verworfen | Autoencoder (Dense + LSTM) pro Kategorie | macOS-`model.fit`-Hang auf realer Datengröße (s.u.); Modul bleibt für Linux/CI |
+| Haupt C | Autoencoder (Dense + LSTM) pro Kategorie | portiert (`models/autoencoder.py`); macOS-Hang gelöst über TF 2.16 + Keras 2 (`TF_USE_LEGACY_KERAS=1`), s.u. |
 
 Vergleichsmetriken: geschätzte Precision (manuelle Annotation ≈ 200 Punkte), Cohen's Kappa
 (Methodenübereinstimmung), Inferenzzeit pro Standort, qualitative Erklärbarkeit.
@@ -86,11 +86,12 @@ Methode einzeln.
   bewusst zu **einer** Klasse `models/autoencoder.py` mit `variant`-Flag zusammengefasst (weniger
   Duplikat). v4 ist Plan, kein Vertrag.
 
-## Autoencoder: Stage-A-Befund — aus dem Methodenvergleich verworfen (2026-05-29)
+## Autoencoder: Stage-A-Befund + macOS-Recovery (2026-05-29 / 2026-05-30)
 
-**Empirisch festgestellt:** Auf der Entwicklungs-macOS-Box hängt `tf.keras.Model.fit()`
-reproduzierbar in Epoch 1, sobald die Trainingsdaten realistische Größenordnung erreichen
-(Stage A: 2 Baumärkte, 1092 Tagesfenster × 96 Slots, float32, ~750 MB RSS). Der Hang tritt
+**Stage-A-Befund (29.05.2026):** Unter **TF 2.21 + Keras 3.14** hing
+`tf.keras.Model.fit()` auf der Entwicklungs-macOS-Box reproduzierbar in Epoch 1,
+sobald die Trainingsdaten realistische Größenordnung erreichten (Stage A: 2
+Baumärkte, 1092 Tagesfenster × 96 Slots, float32, ~750 MB RSS). Der Hang trat
 auf
 
 - mit und ohne `validation_split`,
@@ -99,24 +100,49 @@ auf
 - bei `epochs=2` schon im allerersten Epoch (kein Fortschritt nach „Epoch 1/2"),
 - 0 % CPU, nur per `SIGKILL` beendbar.
 
-Abgrenzung: derselbe `AutoencoderDetector` läuft auf dem synthetischen Mini-Datensatz
-(`/tmp/ae_diag.py`, 8 Fenster, `val=0`) in <0,3 s sauber durch. Der Hang ist also
-**scale-bound**, nicht config-bound — vermutlich eine macOS-spezifische
-TF/Keras-3-Threadpool-Interaktion, die sich erst bei mehreren Batches pro Epoch zeigt.
-Drei Diagnose-Iterationen mit harter 5-min-Time-Box reichten zur Entscheidung; weitere
-TF/Threading-Versuche wären spekulativ.
+Abgrenzung damals: derselbe `AutoencoderDetector` lief auf dem synthetischen
+Mini-Datensatz (`/tmp/ae_diag.py`, 8 Fenster, `val=0`) in <0,3 s sauber durch.
+Der Hang war **scale-bound** und (wie sich am Folgetag bestätigte)
+**Keras-3-spezifisch** auf macOS.
+
+**macOS-Recovery (30.05.2026):** Stufe A der gestaffelten Recovery
+(TF-Version-Downgrade) löste den Hang vollständig. Pin:
+
+- `tensorflow==2.16.2` (statt 2.21)
+- `tf-keras==2.16.0` (Keras-2-Maintenance-Paket)
+- `TF_USE_LEGACY_KERAS=1` auf Modulebene in `models/autoencoder.py` gesetzt,
+  bevor `tensorflow` importiert wird — leitet `tf.keras` auf `tf_keras` um.
+
+**Empirische Belege:**
+
+- **Stage A** (2 Sites, 1092 Fenster, epochs=30): `setup` in **49,6 s** (statt
+  Hang); threshold = 1,5838.
+- **Stage B v2** (Anomalie-Injektion auf Baumarkt_03, 5 Werktage gemittelt gegen
+  Test-Slice-Median):
+  - Niveau × 2,0:  mittlere Ratio **16,5** (Target ≥ 2,0).
+  - Form invertiert: mittlere Ratio **38,2** — deutlich höher als Niveau,
+    bestätigt die methodology-These „per-site StandardScaler behält das Niveau,
+    der AE ist primär sensitiv für Form-Abweichungen".
+- **Stage C** (Vollauf 22 Baumärkte, `run_autoencoder(write=True)`): **68,2 s**,
+  2,19 M Score-Zeilen ins `data/processed/anomaly_scores.parquet`, gesamte
+  Test-Flag-Rate **1,12 %**, pro-Site-Raten plausibel verteilt (0,0 % .. 5,99 %,
+  Median ≈ 1 %).
+- **Tests** (`tests/test_autoencoder.py`): die vier zuvor mit
+  `@pytest.mark.skip` markierten fit-basierten Tests laufen jetzt grün
+  (5 passed in 8,66 s, inkl. LSTM-Variante und save/load-Roundtrip).
 
 **Konsequenzen für die Auswertung:**
 
-- **Methodenvergleich (Schritt 11) läuft mit drei Methoden:** Z-Score, ARIMA, Cluster-Distanz.
-  Die drei sind nicht ad-hoc gewählt, sondern decken die drei Signal-Familien ab, die wir im
-  Konzept ohnehin trennen (Punkt-/Residual-Outlier, lokal-prognostische Abweichung,
-  form-/segment-untypisch).
-- **AE-Modul (`models/autoencoder.py`) und Driver (`evaluation/scoring.run_autoencoder`)
-  bleiben im Code.** Sie sind auf Linux/CI vermutlich lauffähig (gleicher Standalone-Pfad,
-  ohne macOS-Threadpool); die Tests sind mit `@pytest.mark.skip` markiert
-  (`tests/test_autoencoder.py`), nicht entfernt. Eine Reproduktion auf Linux/CI
-  bleibt für spätere Sessions offen, blockiert das Modul-Ergebnis aber nicht.
+- **Methodenvergleich wird auf vier Methoden erweitert:** Z-Score, ARIMA,
+  Cluster-Distanz **und** Autoencoder. Die AE-Scores sind nativ
+  `granularity="point"` und passen in dasselbe parquet-Schema wie Z-Score und
+  ARIMA. Die Schritt-11-Tabelle und das Notebook 06 müssen entsprechend
+  erweitert werden (separate Folge-Iteration auf dem `method-comparison`-
+  Branch, da der Annotations- und Methodenvergleich dort bereits abgeschlossen
+  war).
+- **Modul-Status:** `models/autoencoder.py` und Driver
+  `evaluation/scoring.run_autoencoder` sind weiter im Code und jetzt auf macOS
+  voll lauffähig. CI/Linux profitieren unverändert vom selben Pin.
 - **Paper-Diskussion:** „Welche Methoden gewinnen?" wird auf den drei portierten Methoden
   beantwortet; der AE wird als **methodologisch verfolgter, lokal nicht durchführbarer**
   Pfad im Limitations-Abschnitt offen ausgewiesen — ehrlicher als unter Druck auf eine

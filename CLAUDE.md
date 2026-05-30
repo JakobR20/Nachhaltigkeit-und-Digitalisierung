@@ -121,16 +121,16 @@ Das Streamlit-Dashboard ist **Belegmaterial** für das Paper und ein **Vorzeigea
 
 **Vertraulichkeit:** Rausch-Daten sind nicht öffentlich. `data/raw/rlm/` ist gitignored; im Repo nur synthetische Sample-Daten zur Demonstration.
 
-**Lesson Learned (2026-05-29) – TF `model.fit()` hängt auf macOS auf realer Datengröße:** Der Autoencoder-`fit()` „hängt" (0 % CPU, kein Fortschritt, nur per SIGKILL beendbar) auf macOS in **zwei** Kontexten:
+**Lesson Learned (2026-05-29 / 30) – macOS-AE-Hang unter Keras 3, gelöst durch Keras-2-Pin:** Unter **TF 2.21 + Keras 3.14** hing `tf.keras.Model.fit()` auf macOS reproduzierbar in „Epoch 1/N", sobald die Trainingsdaten realistische Größenordnung erreichten (≥ 1000 Tagesfenster × 96 Slots) — in pytest wie im Standalone-Skript, mit und ohne `validation_split`/Callbacks. Synthetische 8-Fenster-Repros liefen sauber durch; der Hang war **scale-bound** und **Keras-3-spezifisch**.
 
-1. **In pytest** — reproduziert auch mit Core-pytest allein (ohne pytest-cov, ohne conftest, ohne Plugins; via 25 s-Wrapper-Diagnose).
-2. **Im reinen Python-Skript bei realistischer Datengröße** — bei ~1000+ Tagesfenstern × 96 Slots hängt `model.fit` bereits in „Epoch 1/N" und kommt nicht voran (mit *und* ohne `validation_split`, mit *und* ohne Callbacks; 3-min-Time-Box-Diagnose).
+**Recovery (30.05.2026, gestaffelter Plan, Stufe 1 erfolgreich):** Pin auf **TF 2.16.2 + tf-keras 2.16.0** (Keras 2 als Maintenance-Paket), aktiviert über `TF_USE_LEGACY_KERAS=1` auf Modulebene in `src/rausch_energy_anomaly/models/autoencoder.py`. Stage A (2 Sites, 1092 Fenster, epochs=30) läuft jetzt in 49,6 s; Stage C (22 Sites, Vollauf) in 68,2 s. Alle vier zuvor mit `@pytest.mark.skip` markierten fit-Tests sind grün.
 
-Identischer Code als Mini-Standalone-Skript (`/tmp/ae_diag.py`, 8 Fenster, `val=0`) läuft dagegen in <0,3 s durch — der Hang ist also **scale- und kontext-bound**, vermutlich eine macOS-spezifische TF-Threadpool-Interaktion (TF 2.21 / Keras 3.14). Threading-Hypothesen (Single-Thread-Fix, OMP_NUM_THREADS) wurden empirisch widerlegt. **Konsequenzen:**
+**Konsequenzen:**
 
-- `tests/test_autoencoder.py`: `fit()`-Tests sind mit `@pytest.mark.skip` markiert (Reason-Konstante `_FIT_HANG_REASON`).
-- **AE ist aus dem Methodenvergleich (Schritt 11) verworfen.** Der Vergleich läuft mit Z-Score + ARIMA + Cluster-Distanz. AE-Modul (`models/autoencoder.py`) und Driver (`evaluation/scoring.run_autoencoder`) bleiben im Code für eine spätere Linux/CI-Reproduktion. Begründung im methodology-Kapitel („Autoencoder: Stage-A-Befund").
-- Der TF-Single-Thread-Fix (`tf.config.threading.set_intra/inter_op_parallelism_threads(1)`) steht weiterhin auf Modulebene in `autoencoder.py` und wird **nicht** in `conftest.py` dupliziert (spart 15–30 s TF-Import pro pytest-Lauf; ändert ohnehin nichts an dem hier dokumentierten Hang).
+- Skip-Marker sind entfernt; `pytest tests/test_autoencoder.py` läuft komplett (5 passed in 8,66 s).
+- AE ist **zurück im Methodenvergleich** als vierte portierte Methode; siehe `reports/methodology.md` Abschnitt „Autoencoder: Stage-A-Befund + macOS-Recovery". Notebook 06 + die Schritt-11-Tabelle müssen separat um AE erweitert werden.
+- Der TF-Single-Thread-Fix (`tf.config.threading.set_intra/inter_op_parallelism_threads(1)`) steht weiterhin auf Modulebene in `autoencoder.py` und wird **nicht** in `conftest.py` dupliziert (spart 15–30 s TF-Import pro pytest-Lauf; Threading war nie die eigentliche Ursache, hilft aber unter Last).
+- Der Pin ist in `pyproject.toml` unter `[project.optional-dependencies].deep` festgeschrieben; `uv sync --extra deep --extra dev` installiert die richtige Kombination.
 
 ---
 
