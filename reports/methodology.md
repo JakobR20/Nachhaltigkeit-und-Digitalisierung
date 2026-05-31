@@ -235,10 +235,11 @@ abgelegt; das Notebook nutzt den Override über `load_default_threshold_pct`.
 | `cluster_segment` | −0,01 | 0,02 | — |
 | `arima` | 0,08 | — | — |
 
-Höchster Wert **κ(arima, autoencoder) = 0,11** — methodisch erklärbar (beide
-arbeiten auf einem ähnlichen Niveau-/Form-Signal und finden gelegentlich
-dieselben scharfen Sprünge). Trotz dieser leicht erhöhten Paar-Korrelation
-liegen **alle sechs Paare deutlich unter der Komplementaritäts-Schwelle 0,40**.
+Höchster Wert **κ(arima, autoencoder) = 0,11** — methodisch erklärbar: beide
+Methoden reagieren auf abrupte Abweichungen vom erwarteten Verlauf (ARIMA
+Forecast-Residuum, AE Rekonstruktionsfehler), daher partielle methodische
+Verwandtschaft. Trotzdem klar komplementär: **alle sechs Paare liegen deutlich
+unter der 0,40-Schwelle**.
 Die alten 3-Methoden-κ ≤ 0,08 bleiben unverändert; AE addiert eine neue,
 schwach mit ARIMA korrelierte Signal-Dimension. Die κ-Heatmaps über den Sweep
 (`reports/figures/06_kappa_heatmap.png`) zeigen Disjunktheit über alle
@@ -255,15 +256,31 @@ X ≥ 0,25 stabil. Die in der älteren Limitationsdiskussion zitierten Werte
 | **`autoencoder`** | **5,2 s** | **3,2 s** |
 | **`arima`** | **118,4 s** | **50,1 s** |
 
-**Überraschung mit AE:** Der Autoencoder ist nur Faktor ≈ 20 langsamer als
-Cluster-Distanz und etwa **20× schneller als ARIMA**. AE-Inferenzkosten
-liegen damit zwischen den schnellen klassischen Methoden und ARIMA — kein
-Bottleneck. ARIMA bleibt allein der teure Block (~ 10 min hochgerechnet auf
-22 Baumärkte). **Konsequenz für die Dashboard-Architektur:** **Nur ARIMA**
-muss aus dem vor-berechneten `anomaly_scores.parquet` eingelesen werden, kein
-On-the-fly-Recompute bei Threshold-Slider. Z-Score, Cluster und auch AE
-können interaktiv neu berechnet werden, falls Hyperparameter-Slider eingeplant
-sind. Diese Trennung gehört explizit ins Dashboard-Kapitel.
+**Überraschung mit AE — Paper-relevanter Befund:** Der Autoencoder ist nur
+Faktor ≈ 20 langsamer als Cluster-Distanz und etwa **20× schneller als
+ARIMA**. Hochgerechnet entspricht ein Vollauf auf 22 Baumärkten **~22 s** für
+AE versus **~10 min** für ARIMA. Das relativiert die übliche „Deep-Methoden
+sind teuer"-Intuition: in dieser Setup-Größe (96-Slot-Tagesfenster, Dense-AE
+mit Hidden 32 / Latent 8) ist der Autoencoder eine **vollständig interaktive**
+Methode, und ARIMA wird zum allein dominanten Kostenfaktor. Gehört in die
+Paper-Diskussion (Methoden-Charakteristik) und ins Dashboard-Kapitel:
+**Nur ARIMA** muss aus dem vor-berechneten `anomaly_scores.parquet`
+eingelesen werden; Z-Score, Cluster und auch AE können bei
+Hyperparameter-Slidern on-the-fly neu laufen, ohne dass die Interaktivität
+leidet.
+
+### AE-Drift-Sensitivität (Train vs. Test)
+
+Im Vergleich der vier Methoden ist **AE die einzige mit Test-Flag-Rate > Train**
+(AE 1,21 % Test vs. 0,89 % Train; Ratio 1,36). ARIMA bleibt fast konstant
+(1,05 / 1,03 ≈ 1,02), Cluster und Z-Score sinken vom Train zum Test
+(0,64 / 1,01 ≈ 0,63 bzw. 3,90 / 5,06 ≈ 0,77). Lesart: **AE zeigt eine
+Site-Verhaltensdrift zwischen 2023–24 und 2025**, die die anderen Methoden
+mehr oder weniger glattbügeln. Die Pro-Site-StandardScaler-Normierung
+(Designentscheidung Schritt 9) verstärkt diese Drift-Sensitivität, weil das
+site-interne Niveau bewusst erhalten bleibt — ein wandernder Mittelwert über
+die Jahre wird sichtbar. Methodisch konsistent mit dem Stage-B-Befund
+„AE primär form-sensitiv, aber das Niveau bleibt im Standard-Raum erhalten".
 
 ### Plausibilitäts-Validierung (Felix & Jakob)
 
