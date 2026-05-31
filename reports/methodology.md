@@ -85,6 +85,11 @@ Methode einzeln.
 - **Struktur-Notiz:** v4 §4 nennt zwei Dateien (`autoencoder_dense.py`, `autoencoder_lstm.py`);
   bewusst zu **einer** Klasse `models/autoencoder.py` mit `variant`-Flag zusammengefasst (weniger
   Duplikat). v4 ist Plan, kein Vertrag.
+- **Empirisch bestätigt (Stage B, 30.05.2026):** AE detektiert Form-Anomalien stärker als
+  Niveau-Anomalien aufgrund der Pro-Site-Normierung — Form-Inversion liefert eine ~2,3× höhere
+  Rekonstruktionsfehler-Ratio als Niveau-Verdopplung (38,2 vs. 16,5, gemittelt über 5 Werktage
+  auf Baumarkt_03). Konsistent mit der oben begründeten Designentscheidung; siehe Abschnitt
+  „Autoencoder: Stage-A-Befund + macOS-Recovery" für Mess-Details.
 
 ## Autoencoder: Stage-A-Befund + macOS-Recovery (2026-05-29 / 2026-05-30)
 
@@ -176,16 +181,174 @@ Beide Perioden (96, 672) sind methodisch begründet; die Tagesperiode 96 ist der
   Feiertags-Bundesland) als Limitation diskutieren.
 - **Übertragbarkeit:** Innerhalb-Kategorie-Generalisierung (trainieren auf N Baumärkten,
   anwenden auf einen weiteren) statt Cross-Category-Transfer (v4 §1.3).
-- **Schwelle X der Segment-Tag-Aggregation (Schritt 11):** Punkt-Methoden werden für den
-  Vergleich auf Segment-Tag hoch-aggregiert. „Irgendein Flag im Segment" (any) bläht die
-  Raten auf (ARIMA ~30 %, Z-Score ~14 % auf Segment-Tag). Statt „any" eine **Anteils-/
-  Mindestdauer-Schwelle** (X % der Segment-Punkte über Threshold) verwenden — X ist selbst
-  ein **Sensitivitätsparameter** und einheitlich für alle Score-Methoden zu variieren.
-- **Ensemble statt „welche gewinnt" (offen für Schritt 11):** κ ≈ 0 zwischen Cluster-Distanz
-  und den Residual-Methoden (κ ≈ 0,45 zwischen Z-Score und ARIMA) zeigt, dass die Methoden
-  **komplementär** sind, nicht redundant. Damit ist „welche Methode gewinnt?" womöglich die
-  falsche Frage; ein **Ensemble** (z. B. Vereinigung/Voting der Flags) kann das ehrlichere
-  Ergebnis sein. Schritt 11 bleibt für **beide Ausgänge** offen.
+- **Schwelle X + Ensemble vs. Sieger (Schritt 11):** beide ursprünglich offenen Fragen
+  sind durch den Sweep + die Plausibilitäts-Annotation empirisch beantwortet — siehe
+  eigenen Abschnitt „Methodenvergleich (Schritt 11) — Befund" unten. Die hier zuvor
+  zitierten Zahlen (ARIMA ~30 %, Z-Score ~14 % bei „any"; κ ≈ 0,45 zscore↔arima) galten
+  für `X=0` (any-Aggregation) und sind im Schritt-11-Abschnitt mit dem gewählten
+  `X=0,25` aktualisiert.
+
+## Methodenvergleich (Schritt 11) — Befund (vier Methoden)
+
+Sweep-Lauf erstmals am 30.05.2026 (drei Methoden) und reproduziert am 31.05.2026
+mit der vierten Methode (`autoencoder`, nach macOS-Recovery), beide auf dem
+aktuellen `data/processed/anomaly_scores.parquet`. Code:
+`evaluation/method_comparison.py`. Notebook: `notebooks/06_method_comparison.ipynb`.
+Outputs: `reports/tables/06_method_comparison.md`, `reports/figures/06_*.png`.
+
+### Cluster-Anker
+
+Cluster-Distanz ist nativ Segment-Tag und damit der Anker für die X-Wahl der
+Punkt-Methoden. Test-Flag-Rate (2025+) im aktuellen Parquet: **0,64 %**.
+
+### X-Wahl (Aggregations-Schwelle)
+
+Sweep über `threshold_pct ∈ {0,0, 0,10, 0,25, 0,50, 0,75}`. Bei `X=0`
+(any-Aggregation) bestätigt sich der frühere Smoke-Befund: ARIMA 28,6 %,
+Z-Score 13,1 % — methodisch nicht haltbar.
+
+**Eigener Befund (drei Punkt-Methoden, drei Profile):** Es gibt **keinen
+einzigen `X`**, der alle drei Punkt-Methoden gleichzeitig in 0,5×..2× des
+Cluster-Ankers bringt. Z-Score produziert pro Segment systematisch **breitere**
+Punkt-Anomalien als ARIMA und AE. Konkret bei `X = 0,25` (Test-Flag-Rate):
+
+| Methode | Flag-Rate Test | Ratio zum Anker (0,64 %) |
+|---|---|---|
+| `cluster_segment` | 0,64 % | 1,00 (Anker) |
+| `arima` | 1,05 % | 1,64 ✓ im 0,5×..2×-Band |
+| `autoencoder` | 1,21 % | 1,89 ✓ im Band |
+| `zscore_stl` | 3,90 % | 6,1 (außerhalb) |
+
+**Entscheidung: `X_default = 0,25`.** Zwei der drei Punkt-Methoden (ARIMA, AE)
+landen sauber im Band; Z-Score bleibt aufgebläht und wird als eigenständiger
+Befund ausgewiesen („Z-Score streut Flags breiter über die Anomalie-Periode als
+ARIMA und AE — methodisch interessant, kein X-Wahl-Fehler"). `X = 0,75` würde
+ARIMA auf 0 % drücken und damit aus dem Vergleich nehmen — nicht akzeptabel.
+In `config/config.yaml` unter `comparison.aggregation_threshold_pct: 0.25`
+abgelegt; das Notebook nutzt den Override über `load_default_threshold_pct`.
+
+### Komplementarität (κ, 6 Paare bei X = 0,25)
+
+| | `zscore_stl` | `arima` | `cluster_segment` |
+|---|---|---|---|
+| `autoencoder` | 0,03 | **0,11** | 0,03 |
+| `cluster_segment` | −0,01 | 0,02 | — |
+| `arima` | 0,08 | — | — |
+
+Höchster Wert **κ(arima, autoencoder) = 0,11** — methodisch erklärbar: beide
+Methoden reagieren auf abrupte Abweichungen vom erwarteten Verlauf (ARIMA
+Forecast-Residuum, AE Rekonstruktionsfehler), daher partielle methodische
+Verwandtschaft. Trotzdem klar komplementär: **alle sechs Paare liegen deutlich
+unter der 0,40-Schwelle**.
+Die alten 3-Methoden-κ ≤ 0,08 bleiben unverändert; AE addiert eine neue,
+schwach mit ARIMA korrelierte Signal-Dimension. Die κ-Heatmaps über den Sweep
+(`reports/figures/06_kappa_heatmap.png`) zeigen Disjunktheit über alle
+X ≥ 0,25 stabil. Die in der älteren Limitationsdiskussion zitierten Werte
+(κ ≈ 0,45 zscore↔arima, κ ≈ 0 cluster↔beide) galten für das alte
+`flag.any()` (`X = 0`) und sind hier mit der Anteils-Schwelle obsolet.
+
+### Inferenzkosten (Mikrobenchmark, 5 Sites)
+
+| Methode | fit | score |
+|---|---|---|
+| `zscore_stl` | ~2 ms | ~0,3 ms |
+| `cluster_segment` | 1,4 s | 8 ms |
+| **`autoencoder`** | **5,2 s** | **3,2 s** |
+| **`arima`** | **118,4 s** | **50,1 s** |
+
+**Überraschung mit AE — Paper-relevanter Befund:** Der Autoencoder ist nur
+Faktor ≈ 20 langsamer als Cluster-Distanz und etwa **20× schneller als
+ARIMA**. Hochgerechnet entspricht ein Vollauf auf 22 Baumärkten **~22 s** für
+AE versus **~10 min** für ARIMA. Das relativiert die übliche „Deep-Methoden
+sind teuer"-Intuition: in dieser Setup-Größe (96-Slot-Tagesfenster, Dense-AE
+mit Hidden 32 / Latent 8) ist der Autoencoder eine **vollständig interaktive**
+Methode, und ARIMA wird zum allein dominanten Kostenfaktor. Gehört in die
+Paper-Diskussion (Methoden-Charakteristik) und ins Dashboard-Kapitel:
+**Nur ARIMA** muss aus dem vor-berechneten `anomaly_scores.parquet`
+eingelesen werden; Z-Score, Cluster und auch AE können bei
+Hyperparameter-Slidern on-the-fly neu laufen, ohne dass die Interaktivität
+leidet.
+
+### AE-Drift-Sensitivität (Train vs. Test)
+
+Im Vergleich der vier Methoden ist **AE die einzige mit Test-Flag-Rate > Train**
+(AE 1,21 % Test vs. 0,89 % Train; Ratio 1,36). ARIMA bleibt fast konstant
+(1,05 / 1,03 ≈ 1,02), Cluster und Z-Score sinken vom Train zum Test
+(0,64 / 1,01 ≈ 0,63 bzw. 3,90 / 5,06 ≈ 0,77). Lesart: **AE zeigt eine
+Site-Verhaltensdrift zwischen 2023–24 und 2025**, die die anderen Methoden
+mehr oder weniger glattbügeln. Die Pro-Site-StandardScaler-Normierung
+(Designentscheidung Schritt 9) verstärkt diese Drift-Sensitivität, weil das
+site-interne Niveau bewusst erhalten bleibt — ein wandernder Mittelwert über
+die Jahre wird sichtbar. Methodisch konsistent mit dem Stage-B-Befund
+„AE primär form-sensitiv, aber das Niveau bleibt im Standard-Raum erhalten".
+
+### Plausibilitäts-Validierung (Felix & Jakob)
+
+**Stand 30.05.2026 (drei Methoden):** Die ursprüngliche Plausibilitäts-
+Stichprobe (57 Top-Kandidaten je Z-Score/ARIMA/Cluster nach Prioritäts-Dedup,
+`reports/annotation/`) wurde durchgesichtet — **alle 57 als plausibel anomal
+bestätigt**, keine `erklärbar`- oder `unklar`-Markierung. Empirische
+Precision: arima 17/17, cluster_segment 20/20, zscore_stl 20/20 — alle
+**100 %**.
+
+**Stand 31.05.2026 (AE nachgezogen):** Nach AE-Recovery wurden **9
+zusätzliche AE-only-Kandidaten** an die Annotation angehängt (`nr 58..66`;
+11 weitere AE-Top-Treffer fielen als `(site, timestamp)`-Duplikate auf die
+höher-priorisierten Methoden und sind dort als `also_flagged_by` markiert).
+Reviewer-Sichtung dieser 9 ist ausstehend; bis dahin steht AE-Precision auf
+`NaN`. Erwartung (per κ-Befund und AE-Charakteristik): AE liefert in seinen
+Top-Kandidaten ebenfalls plausible Form-/Niveau-Anomalien, Precision wird in
+derselben Größenordnung wie die anderen drei Methoden liegen.
+
+**Methodische Konsequenz** (unverändert mit AE): Die Plausibilitäts-
+Validierung trennt die Methoden auf dieser Stichprobe nicht — sie zeigt, dass
+jede Methode auf ihren Top-Kandidaten plausible Anomalien liefert. Der
+Methodenvergleich konzentriert sich damit auf **κ-Komplementarität und
+Inferenzkosten** als Auswahlkriterien. *Limitierung*: die Stichprobe ist
+methodenspezifisch (Top-|score| je Methode) und prüft Precision auf den
+*stärksten* Kandidaten, nicht in der Breite — eine Bewertung der
+False-Negative-Rate war im Annotationsbudget nicht vorgesehen und gehört in
+eine spätere Iteration.
+
+### Strategie-Empfehlung (Sieger vs. Ensemble)
+
+`recommend_strategy` arbeitet mit **absoluten Schwellen** (siehe Docstring):
+eine Methode hat Sieger-Status nur bei
+`precision ≥ 0,90 UND max(κ vs jede andere Methode) ≤ 0,40`. Erfüllen
+mehrere Methoden beide → **Ensemble (Union)**: die gemeinsam niedrige κ
+beweist disjunkte Anomalie-Mengen; ein Ensemble summiert komplementäres statt
+redundantes Wissen.
+
+**Aktueller Stand (3 Methoden gelabelt, AE ausstehend):** drei Qualifier
+(arima, cluster_segment, zscore_stl, alle Precision = 100 % UND max κ = 0,11
+≤ 0,40); `recommend_strategy` liefert bereits:
+
+```
+strategy = ensemble
+label    = union
+rationale = 3 Methoden erfüllen das Sieger-Kriterium
+           (arima, cluster_segment, zscore_stl); ihre paarweise κ ≤ 0,40
+           zeigt, dass sie disjunkte Anomalie-Mengen detektieren.
+           Union summiert komplementäres Wissen — Default-Ensemble
+           für das Dashboard.
+```
+
+**Erwartete finale Lage** (nach AE-Labeling): bei κ(AE, andere) ≤ 0,11 und
+plausibler AE-Precision wird AE als **vierte qualifizierende Methode**
+dazustoßen. Empfehlung bleibt **Ensemble (Union)**, jetzt über vier statt
+drei Methoden — das Dashboard kombiniert vier weitgehend disjunkte
+Signal-Familien.
+
+- **Union** (sensitiv): Flag, wenn ≥ 1 Methode flaggt — niedrige
+  False-Negative-Rate; Default-Wahl für ein Dashboard, das je Flag einen
+  Review zulässt.
+- **Voting / Mehrheit** (konservativ): Flag, wenn ≥ 2 von 4 flaggen — höhere
+  Precision pro Flag; geeignet für automatisches Pflicht-Reporting ohne
+  manuellen Review. *Nicht* die Default-Wahl bei `κ ≈ 0`, weil dann praktisch
+  nie 2 Methoden gleichzeitig auf demselben `(site, date, segment)` flaggen
+  — die konservative Variante würde fast leer laufen.
+
+Default: **Union**. Wahl Union vs. Voting hängt vom Dashboard-Workflow ab.
 
 ## Datenqualität (Stand-/Sonderfälle)
 

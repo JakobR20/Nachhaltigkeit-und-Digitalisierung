@@ -81,3 +81,13 @@ evaluation:
   precision_sample_size: 200
   kappa_pairwise: true
   inference_timing: true
+
+comparison:
+  # Schritt 11 (Methodenvergleich): Anteils-Schwelle für die Hoch-Aggregation
+  # auf (site, date, segment). Gewählt nach X-Sweep im Notebook 06 — siehe
+  # reports/methodology.md ("Methodenvergleich (Schritt 11)") und
+  # reports/tables/06_method_comparison.md. Begründung: ARIMA-Sichtbarkeit
+  # (Ratio 1,64 zum Cluster-Anker 0,64 %) wichtiger als rein numerische Anker-
+  # Nähe; die Z-Score/ARIMA-Asymmetrie (kein gemeinsames X kalibriert beide
+  # Punkt-Methoden auf dieselbe Flag-Rate) ist ein eigenständiger Befund.
+  aggregation_threshold_pct: 0.25
