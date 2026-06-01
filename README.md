@@ -74,6 +74,20 @@ ollama serve
 
 > Für den optionalen Autoencoder-Vergleich wird zusätzlich TensorFlow benötigt: `uv pip install -e ".[deep]"` (gepinnt auf TF 2.16.2 + tf-keras 2.16.0, siehe `CLAUDE.md`).
 
+### 6. Dashboard starten
+
+Das Streamlit-Dashboard (Demo-Artefakt für Rausch) zeigt die Anomalien interaktiv über vier Seiten: **Übersicht**, **Methodenvergleich**, **Standort-Detail** (mit Hyperparameter-Slidern) und **Anomalie-Detail** (mit LLM-Empfehlung).
+
+```bash
+streamlit run app/dashboard.py
+```
+
+Öffnet automatisch `http://localhost:8501`.
+
+- **Voraussetzungen:** `uv sync` installiert alles Nötige (Streamlit + Plotly sind enthalten). Keine API-Keys, kein Ollama nötig — das Dashboard liest vorberechnete Ergebnisse.
+- **Datenstand:** Das Dashboard liest aus `data/processed/*.parquet` (Anomalie-Scores, Features) und `reports/llm_recommendations*`. Liegen diese Dateien nicht lokal vor, zeigt das Dashboard leere Tabellen — zuerst die Pipeline-Schritte laufen lassen, die die Parquets erzeugen.
+- **Methoden-Farben & Branding** werden zentral in `config/dashboard.yaml` gepflegt; das Theme liegt in `.streamlit/config.toml`.
+
 ## Erste Schritte (für Claude Code)
 
 ```
