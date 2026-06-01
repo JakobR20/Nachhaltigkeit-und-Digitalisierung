@@ -464,3 +464,15 @@ dieser Arbeit nicht möglich war.
 **Reproduzierbarkeits-Artefakte:** `reports/llm_recommendations.csv` (66 Zeilen,
 12 Spalten) als flache Tabelle; `reports/llm_recommendations/{001..066}.json` mit
 vollem Kontext, Prompt und Response je Anomalie für den Dashboard-Detailabruf.
+
+## Flag-Raten und operative Anomalie-Mengen
+
+Bei Standard-Schwellwert (3,0 σ) und X = 0,25 produziert die Pipeline ca. 1–5 %
+Flag-Rate je nach Methode (Test-Zeitraum: zscore_stl 3,90 %, autoencoder 1,21 %,
+arima 1,05 %, cluster_segment 0,64 %). Bei größeren Standorten ergeben sich daraus
+pro Monat operativ relevante Anomalie-Mengen — z. B. rund 240 zscore_stl-Anomalien
+für Baumarkt_03 im Januar 2023. Das Dashboard erlaubt über die Hyperparameter-Slider
+eine Schwellwert-Anpassung zur Reduktion auf handhabbare Anomalie-Anzahlen je
+Reviewer-Aufkommen (Re-Thresholding der vorberechneten Scores, keine Neu-Inferenz).
+Eine produktive Pipeline würde Anomalien zusätzlich über Schweregrad und
+Ensemble-Überlappung priorisieren.
