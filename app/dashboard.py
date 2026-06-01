@@ -21,15 +21,20 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 import plotly.express as px  # noqa: E402
+import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from app.data_access import (  # noqa: E402
+    COMPARISON_MD,
     METHODS,
+    load_comparison_markdown,
     load_config,
     load_flag_matrix,
     load_recommendations,
 )
-from app.method_meta import kappa_matrix  # noqa: E402
+from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
+
+FIGURES = COMPARISON_MD.parent.parent / "figures"
 
 st.set_page_config(page_title="RLM-Anomalieerkennung", layout="wide")
 
@@ -107,8 +112,66 @@ def _method_card() -> None:
                "Volle Heatmap: Seite »Methodenvergleich«.")
 
 
+def page_method_comparison() -> None:
+    st.subheader("Methodenvergleich")
+    st.caption("Vier Methoden im Vergleich (Schritt 11): Komplementarität, "
+               "Schwellwert-Sweep, Inferenzkosten.")
+
+    col_l, col_r = st.columns(2)
+
+    with col_l:
+        st.markdown("**κ-Komplementarität (Cohen's κ, paarweise)**")
+        km = kappa_matrix()
+        z = [[km.get((a, b)) for b in METHODS] for a in METHODS]
+        fig = go.Figure(data=go.Heatmap(
+            z=z, x=list(METHODS), y=list(METHODS),
+            colorscale="Blues", zmin=0, zmax=1,
+            text=[[f"{v:.2f}" if v is not None else "" for v in row] for row in z],
+            texttemplate="%{text}", colorbar=dict(title="κ"),
+        ))
+        fig.update_layout(height=400, margin=dict(t=10, b=10))
+        st.plotly_chart(fig, width="stretch")
+        st.caption("Niedriges κ (hell) = komplementär. Die Methoden überlappen kaum — "
+                   "ein Ensemble deckt mehr ab als jede einzelne.")
+
+    with col_r:
+        st.markdown("**Inferenzkosten je Methode (Wall-Time, 5 Sites)**")
+        it = inference_times()
+        methods = [m for m in METHODS if m in it]
+        fig2 = go.Figure()
+        fig2.add_bar(name="fit (s)", x=methods, y=[it[m]["fit_s"] for m in methods],
+                     marker_color="#1f77b4")
+        fig2.add_bar(name="score (s)", x=methods, y=[it[m]["score_s"] for m in methods],
+                     marker_color="#ff7f0e")
+        fig2.update_layout(barmode="group", height=400, margin=dict(t=10, b=10),
+                           yaxis_title="Sekunden")
+        st.plotly_chart(fig2, width="stretch")
+        st.caption("ARIMA dominiert die Kosten (Fit + Score); zscore_stl/cluster_segment "
+                   "sind quasi gratis.")
+
+    st.divider()
+    st.markdown("**Schwellwert-Sweep (Flag-Rate über Aggregations-Anteil X)**")
+    sweep = FIGURES / "06_sweep_flag_rates.png"
+    if sweep.exists():
+        st.image(str(sweep), width="stretch")
+        st.caption("X_default = 0,25 (config.yaml). Gewählt, um ARIMA-Sichtbarkeit "
+                   "gegenüber dem Cluster-Anker zu erhalten.")
+    else:
+        st.info("Sweep-Figur nicht gefunden (reports/figures/06_sweep_flag_rates.png).")
+
+    st.divider()
+    st.markdown("**Vergleichstabelle (Schritt 11)**")
+    rows = comparison_table()
+    if rows:
+        st.dataframe(rows, width="stretch", hide_index=True)
+    else:
+        with st.expander("Rohtabelle (Markdown)"):
+            st.markdown(load_comparison_markdown())
+
+
 PAGES = {
     "Übersicht": page_overview,
+    "Methodenvergleich": page_method_comparison,
 }
 
 
