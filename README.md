@@ -4,7 +4,7 @@ Master-Projekt im Modul "Nachhaltigkeit und Digitalisierung" (THWS / Prof. Müß
 
 **Aufgabe:** KI-gestützte Erkennung von Verbrauchsanomalien in RLM-Lastgängen + Handlungsempfehlungen + Streamlit-Dashboard; Prüfungsleistung ist Paper + Visualisierung.
 
-**Architektur:** empirischer Vergleich dreier Methoden — Z-Score-Baseline, ARIMA pro Cluster, Autoencoder (Dense+LSTM) pro Kategorie — plus lokale LLM-Empfehlung (Llama 3.2 3B via Ollama). Python-Paket: `rausch_energy_anomaly` (`src/`-Layout).
+**Architektur:** empirischer Vergleich dreier Methoden — Z-Score-Baseline, ARIMA pro Cluster, Autoencoder (Dense+LSTM) pro Kategorie — plus lokale LLM-Empfehlung (qwen2.5:7b via Ollama). Python-Paket: `rausch_energy_anomaly` (`src/`-Layout).
 
 > Projektgrundlagen in `CLAUDE.md`, aktuelle Architektur in `docs/CLAUDE_patch_v4.md`.
 
