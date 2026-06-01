@@ -8,9 +8,16 @@ Public surface:
 
 from __future__ import annotations
 
+from rausch_energy_anomaly.recommendations.context import (
+    FullContext,
+    MinimalContext,
+    build_full_context,
+    build_minimal_context,
+)
 from rausch_energy_anomaly.recommendations.prompts import (
     SYSTEM_PROMPT_PRODUCTION,
     USER_PROMPT_TEMPLATE,
+    render_user_prompt,
 )
 from rausch_energy_anomaly.recommendations.schemas import (
     RECOMMENDATION_SCHEMA,
@@ -19,7 +26,12 @@ from rausch_energy_anomaly.recommendations.schemas import (
 
 __all__ = [
     "RECOMMENDATION_SCHEMA",
+    "FullContext",
+    "MinimalContext",
     "RecommendationOutput",
     "SYSTEM_PROMPT_PRODUCTION",
     "USER_PROMPT_TEMPLATE",
+    "build_full_context",
+    "build_minimal_context",
+    "render_user_prompt",
 ]
