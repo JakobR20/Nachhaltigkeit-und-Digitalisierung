@@ -36,5 +36,25 @@ def test_site_detail_slider_rerun():
     at = AppTest.from_file(APP, default_timeout=150).run()
     at.sidebar.radio[0].set_value("Standort-Detail").run()
     assert len(at.slider) == 3  # z-score, ARIMA sigma, AE percentile
+    # main load+expectation plot and the method-activity strip
+    assert len(at.get("plotly_chart")) == 2
     at.slider[0].set_value(5.0).run()  # re-threshold must not crash
     assert not at.exception
+
+
+def test_site_detail_card_deeplink_to_anomaly():
+    at = AppTest.from_file(APP, default_timeout=150).run()
+    at.sidebar.radio[0].set_value("Standort-Detail").run()
+    at.selectbox[0].set_value("Baumarkt_06").run()  # has annotated anomalies
+    assert len(at.button) >= 1  # at least one annotated top-5 card has a Details link
+    at.button[0].click().run()
+    assert not at.exception
+    assert at.session_state["page"] == "Anomalie-Detail"
+
+
+def test_method_comparison_three_cards():
+    at = AppTest.from_file(APP, default_timeout=150).run()
+    at.sidebar.radio[0].set_value("Methodenvergleich").run()
+    assert not at.exception
+    # kappa heatmap + anomaly-count bars + inference-cost bars = 3 plotly charts
+    assert len(at.get("plotly_chart")) == 3

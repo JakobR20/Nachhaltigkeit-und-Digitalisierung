@@ -86,6 +86,23 @@ def load_sweep() -> pd.DataFrame:
 
 
 @st.cache_data
+def expected_profile(site: str) -> pd.Series:
+    """Expected load profile: median per (weekday, time-of-day) over full history.
+
+    Indexed by (dayofweek, time) so a window can be mapped to its expectation.
+    """
+    s = load_site_timeseries(site)
+    return s.groupby([s.index.dayofweek, s.index.time]).median()
+
+
+@st.cache_data
+def annotated_index() -> dict[tuple[str, str], str]:
+    """{(site, timestamp_str): nr} for the 66 annotated anomalies (LLM detail exists)."""
+    recs = load_recommendations()
+    return {(r.site, str(r.timestamp)): r.nr for r in recs.itertuples()}
+
+
+@st.cache_data
 def load_recommendation_detail(nr: str) -> dict[str, Any]:
     """Full per-anomaly JSON (context + prompt + response) for the detail page."""
     import json

@@ -27,6 +27,8 @@ import streamlit as st  # noqa: E402
 
 from app.data_access import (  # noqa: E402
     METHODS,
+    annotated_index,
+    expected_profile,
     load_comparison_markdown,
     load_config,
     load_flag_matrix,
@@ -34,7 +36,6 @@ from app.data_access import (  # noqa: E402
     load_recommendations,
     load_scores_for_site,
     load_site_timeseries,
-    load_sweep,
     sites,
 )
 from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
@@ -121,13 +122,13 @@ def _method_card() -> None:
 def page_method_comparison() -> None:
     colors = load_config()["method_colors"]
     header("Methodenvergleich",
-           "Vier Methoden im Vergleich (Schritt 11): Komplementarität, "
-           "Schwellwert-Sweep, Inferenzkosten.")
+           "Wie sich die vier Erkennungsmethoden ergänzen, wie viel sie finden "
+           "und was sie kosten.")
 
-    col_l, col_r = st.columns(2)
-
-    with col_l:
-        st.markdown("**κ-Komplementarität (Cohen's κ, paarweise)**")
+    # Karte 1 — Komplementarität
+    st.markdown("#### 1 · Komplementarität — finden die Methoden dasselbe?")
+    c1a, c1b = st.columns([3, 2])
+    with c1a:
         km = kappa_matrix()
         z = [[km.get((a, b)) for b in METHODS] for a in METHODS]
         fig = go.Figure(data=go.Heatmap(
@@ -136,52 +137,64 @@ def page_method_comparison() -> None:
             text=[[f"{v:.2f}" if v is not None else "" for v in row] for row in z],
             texttemplate="%{text}", colorbar=dict(title="κ"),
         ))
-        fig.update_layout(height=400, margin=dict(t=10, b=10))
+        fig.update_layout(height=360, margin=dict(t=10, b=10))
         st.plotly_chart(fig, width="stretch")
-        st.caption("Niedriges κ (hell) = komplementär. Die Methoden überlappen kaum — "
-                   "ein Ensemble deckt mehr ab als jede einzelne.")
+    with c1b:
+        st.markdown(
+            "Die vier Methoden finden **unterschiedliche** Anomalien. Niedrige "
+            "κ-Werte (−0,01 bis 0,11) bedeuten: kaum Überlappung — **komplementäre "
+            "Sichten**. Ein Ensemble deckt mehr ab als jede Methode allein.")
 
-    with col_r:
-        st.markdown("**Inferenzkosten je Methode (Wall-Time, 5 Sites)**")
+    st.divider()
+
+    # Karte 2 — Methoden-Statistik (erkannte Anomalien je Methode)
+    st.markdown("#### 2 · Wie viel findet jede Methode?")
+    c2a, c2b = st.columns([3, 2])
+    with c2a:
+        matrix = load_flag_matrix()
+        totals = {m: int(matrix[m].sum()) for m in METHODS}
+        fig2 = go.Figure(go.Bar(
+            x=list(METHODS), y=[totals[m] for m in METHODS],
+            marker_color=[colors[m] for m in METHODS],
+            text=[f"{totals[m]:,}" for m in METHODS], textposition="outside",
+        ))
+        fig2.update_layout(height=360, margin=dict(t=10, b=10),
+                           yaxis_title="Geflaggte Anomalien (alle Standorte)")
+        st.plotly_chart(fig2, width="stretch")
+    with c2b:
+        st.markdown(
+            "Bei Standard-Schwelle erkennt jede Methode zwischen **1–5 %** der "
+            "Datenpunkte. **ARIMA / Z-Score:** Punkt-Anomalien (einzelne "
+            "15-min-Werte). **Cluster:** auffällige Tagessegmente. **Autoencoder:** "
+            "untypische Tagesform.")
+
+    st.divider()
+
+    # Karte 3 — Inferenzkosten
+    st.markdown("#### 3 · Was kostet jede Methode?")
+    c3a, c3b = st.columns([3, 2])
+    with c3a:
         it = inference_times()
         methods = [m for m in METHODS if m in it]
-        fig2 = go.Figure()
-        fig2.add_bar(name="fit (s)", x=methods, y=[it[m]["fit_s"] for m in methods],
-                     marker_color="#1f77b4")
-        fig2.add_bar(name="score (s)", x=methods, y=[it[m]["score_s"] for m in methods],
-                     marker_color="#ff7f0e")
-        fig2.update_layout(barmode="group", height=400, margin=dict(t=10, b=10),
-                           yaxis_title="Sekunden")
-        st.plotly_chart(fig2, width="stretch")
-        st.caption("ARIMA dominiert die Kosten (Fit + Score); zscore_stl/cluster_segment "
-                   "sind quasi gratis.")
-
-    st.divider()
-    st.markdown("**Schwellwert-Sweep (Flag-Rate über Aggregations-Anteil X)**")
-    sweep = load_sweep()
-    if not sweep.empty:
         fig3 = go.Figure()
-        for m in METHODS:
-            if m in sweep.columns:
-                fig3.add_scatter(x=sweep["threshold_pct"], y=sweep[m], mode="lines+markers",
-                                 name=m, line=dict(color=colors[m]))
-        fig3.update_layout(height=420, margin=dict(t=10, b=10),
-                           yaxis=dict(title="Flag-Rate Test [%]", type="log"),
-                           xaxis_title="threshold_pct (Anteil flagged points im Segment)",
-                           legend=dict(orientation="h", y=1.08))
+        fig3.add_bar(name="fit (s)", x=methods, y=[it[m]["fit_s"] for m in methods],
+                     marker_color="#1f77b4")
+        fig3.add_bar(name="score (s)", x=methods, y=[it[m]["score_s"] for m in methods],
+                     marker_color="#ff7f0e")
+        fig3.update_layout(barmode="group", height=360, margin=dict(t=10, b=10),
+                           yaxis_title="Sekunden", legend=dict(orientation="h", y=1.1))
         st.plotly_chart(fig3, width="stretch")
-        st.caption("X_default = 0,25 (config.yaml). Gewählt, um ARIMA-Sichtbarkeit "
-                   "gegenüber dem Cluster-Anker zu erhalten.")
-    else:
-        st.info("Sweep-Daten nicht gefunden (reports/tables/06_sweep_flag_rates.csv).")
+    with c3b:
+        st.markdown(
+            "**ARIMA** dominiert die Kosten (~2 Min/Standort). **Z-Score** und "
+            "**Cluster** sind quasi gratis. **Autoencoder:** ~5 s/Standort nach "
+            "dem Training.")
 
-    st.divider()
-    st.markdown("**Vergleichstabelle (Schritt 11)**")
-    rows = comparison_table()
-    if rows:
-        st.dataframe(rows, width="stretch", hide_index=True)
-    else:
-        with st.expander("Rohtabelle (Markdown)"):
+    with st.expander("Methodische Details (Vergleichstabelle Schritt 11)"):
+        rows = comparison_table()
+        if rows:
+            st.dataframe(rows, width="stretch", hide_index=True)
+        else:
             st.markdown(load_comparison_markdown())
 
 
@@ -211,7 +224,8 @@ def page_site_detail() -> None:
     colors = cfg["method_colors"]
     special = cfg.get("special_sites", {})
 
-    header("Standort-Detail", "Lastgang, Methoden-Filter und Live-Schwellwerte je Standort.")
+    header("Standort-Detail",
+           "Lastgang mit Erwartung, Methoden-Aktivität und die stärksten Anomalien.")
     site = st.selectbox("Standort", sites_list())
     if site in special:
         st.warning(f"⚠️ {site}: {special[site]}")
@@ -219,7 +233,6 @@ def page_site_detail() -> None:
     series = load_site_timeseries(site)
     scores = load_scores_for_site(site)
 
-    # Zeitfenster
     tmin, tmax = series.index.min().date(), series.index.max().date()
     c1, c2 = st.columns(2)
     start = c1.date_input("Von", value=tmin, min_value=tmin, max_value=tmax)
@@ -227,10 +240,9 @@ def page_site_detail() -> None:
                         min_value=tmin, max_value=tmax)
     mask = (series.index.date >= start) & (series.index.date <= end)
     window = series[mask]
-
-    st.sidebar.markdown("### Methoden")
-    active = {m: st.sidebar.checkbox(m, value=(m != "autoencoder"), key=f"m_{m}")
-              for m in METHODS}
+    if window.empty:
+        st.info("Kein Lastgang im gewählten Zeitraum.")
+        return
 
     st.sidebar.markdown("### Hyperparameter (Re-Thresholding)")
     thresholds = {
@@ -241,27 +253,92 @@ def page_site_detail() -> None:
     st.sidebar.caption("Verschiebt die Flag-Schwelle auf vorberechneten Scores "
                        "(keine Live-Inferenz; ARIMA-Kosten ~10 min).")
 
+    # 1. Hauptplot: Last + Erwartung (keine X-Marker)
+    profile = expected_profile(site)
+    exp_win = pd.Series([profile.get((t.dayofweek, t.time())) for t in window.index],
+                        index=window.index)
     fig = go.Figure()
     fig.add_scatter(x=window.index, y=window.values, mode="lines",
-                    name="Last (kW)", line=dict(color="#888", width=1))
-    wmin, wmax = window.index.min(), window.index.max()
-    for m in METHODS:
-        if not active[m]:
-            continue
-        flagged = _threshold_flags(scores, m, thresholds)
-        flagged = flagged[(flagged["timestamp"] >= wmin) & (flagged["timestamp"] <= wmax)]
-        if flagged.empty:
-            continue
-        yvals = window.reindex(flagged["timestamp"]).values
-        fig.add_scatter(x=flagged["timestamp"], y=yvals, mode="markers",
-                        name=f"{m} ({len(flagged)})",
-                        marker=dict(color=colors[m], size=7, symbol="x"))
-    fig.update_layout(height=480, margin=dict(t=10, b=10),
-                      yaxis_title="kW", xaxis_title="Zeit",
-                      legend=dict(orientation="h", y=1.05))
+                    name="Last (kW)", line=dict(color="#444", width=1))
+    fig.add_scatter(x=exp_win.index, y=exp_win.values, mode="lines",
+                    name="Erwartung (Median Vergleichstage)",
+                    line=dict(color="#2ca02c", width=1.2, dash="dash"))
+    fig.update_layout(height=360, margin=dict(t=10, b=10), yaxis_title="kW",
+                      legend=dict(orientation="h", y=1.08))
     st.plotly_chart(fig, width="stretch")
-    st.caption(f"Lastgang {site} · {start} bis {end} · {len(window)} 15-min-Punkte. "
-               "Marker = geflaggte Anomalien je aktiver Methode (Slider-abhängig).")
+
+    # 2. Methoden-Streifen: wann hat welche Methode geflaggt
+    wmin, wmax = window.index.min(), window.index.max()
+    flagged_by_method = {
+        m: _threshold_flags(scores, m, thresholds).pipe(
+            lambda d: d[(d["timestamp"] >= wmin) & (d["timestamp"] <= wmax)])
+        for m in METHODS
+    }
+    strip = go.Figure()
+    for i, m in enumerate(METHODS):
+        fl = flagged_by_method[m]
+        strip.add_scatter(
+            x=fl["timestamp"], y=[i] * len(fl), mode="markers",
+            name=f"{m} ({len(fl)})",
+            marker=dict(color=colors[m], size=6, symbol="line-ns-open", line=dict(width=1.5)),
+        )
+    strip.update_layout(
+        height=150, margin=dict(t=10, b=10),
+        yaxis=dict(tickmode="array", tickvals=list(range(len(METHODS))),
+                   ticktext=list(METHODS), range=[-0.5, len(METHODS) - 0.5]),
+        xaxis=dict(range=[wmin, wmax]), showlegend=False,
+    )
+    st.markdown("**Methoden-Aktivität** (vertikale Striche = geflaggte Zeitpunkte)")
+    st.plotly_chart(strip, width="stretch")
+
+    # 3. Top-5-Anomalien des Fensters (nach |score|)
+    _render_top5(site, flagged_by_method, series, profile, colors)
+    st.caption("Top 5 nach Anomalie-Stärke im gewählten Zeitraum. Karten mit "
+               "Details-Link wurden manuell plausibilitätsgeprüft und liegen als "
+               "LLM-Empfehlung vor.")
+
+
+def _render_top5(
+    site: str,
+    flagged_by_method: dict[str, pd.DataFrame],
+    series: pd.Series,
+    profile: pd.Series,
+    colors: dict[str, str],
+) -> None:
+    pool = []
+    for m, fl in flagged_by_method.items():
+        for r in fl.itertuples():
+            pool.append((abs(r.score), r.timestamp, m, r.score))
+    pool.sort(reverse=True)
+    top = pool[:5]
+    if not top:
+        st.info("Keine geflaggten Anomalien im gewählten Zeitraum.")
+        return
+
+    annotated = annotated_index()
+    cols = st.columns(len(top))
+    for col, (_, ts, method, score) in zip(cols, top, strict=False):
+        value = series.get(ts)
+        expected = profile.get((ts.dayofweek, ts.time()))
+        diff = value - expected if (value is not None and expected is not None) else None
+        pct = (100 * diff / expected) if (diff is not None and expected) else None
+        nr = annotated.get((site, str(ts)))
+        with col:
+            badge = "✓ annotiert" if nr else "—"
+            border = "#2ca02c" if nr else "#d1d5db"
+            diff_txt = (f"{diff:+.1f} kW ({pct:+.0f} %)" if diff is not None
+                        else f"score {score:+.1f}")
+            st.markdown(
+                f'<div style="border:1px solid {border};border-left:4px solid '
+                f'{colors[method]};border-radius:8px;padding:0.6rem;font-size:0.85rem">'
+                f'<b>{pd.Timestamp(ts).strftime("%d.%m.%Y %H:%M")}</b><br>'
+                f'<span style="color:{colors[method]}">{method}</span><br>'
+                f'{diff_txt}<br><span style="color:#6b7280">{badge}</span></div>',
+                unsafe_allow_html=True)
+            if nr and st.button("Details", key=f"to_{nr}", width="stretch"):
+                st.session_state["goto_nr"] = nr
+                st.session_state["_nav_to"] = "Anomalie-Detail"
+                st.rerun()
 
 
 def page_anomaly_detail() -> None:
@@ -272,7 +349,15 @@ def page_anomaly_detail() -> None:
     header("Anomalie-Detail", "Lastgang, Score, LLM-Empfehlung und Kontext je Anomalie.")
     labels = [f"nr {r.nr} · {r.site} · {r.method} · {r.timestamp}"
               for r in recs.itertuples()]
-    idx = st.selectbox("Anomalie", range(len(labels)), format_func=lambda i: labels[i])
+    # honour a deep-link from the site-detail top-5 cards
+    default = 0
+    goto = st.session_state.pop("goto_nr", None)
+    if goto is not None:
+        matches = recs.index[recs["nr"] == goto].tolist()
+        if matches:
+            default = recs.index.get_loc(matches[0])
+    idx = st.selectbox("Anomalie", range(len(labels)), index=default,
+                       format_func=lambda i: labels[i])
     row = recs.iloc[idx]
     nr = row["nr"]
     detail = load_recommendation_detail(nr)
@@ -384,7 +469,13 @@ def main() -> None:
     st.sidebar.markdown(f"### {b['logo_placeholder']}")
     st.sidebar.title(b["title"])
     st.sidebar.caption(b["subtitle"])
-    choice = st.sidebar.radio("Seite", list(PAGES.keys()))
+    # a deep-link from the site-detail cards sets _nav_to before the radio renders
+    if "page" not in st.session_state:
+        st.session_state["page"] = "Übersicht"
+    nav_to = st.session_state.pop("_nav_to", None)
+    if nav_to is not None:
+        st.session_state["page"] = nav_to
+    choice = st.sidebar.radio("Seite", list(PAGES.keys()), key="page")
     PAGES[choice]()
 
 
