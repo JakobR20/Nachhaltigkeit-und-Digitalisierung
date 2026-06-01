@@ -1,0 +1,51 @@
+{
+  "nr": "59",
+  "annotation": {
+    "nr": "59",
+    "site": "Baumarkt_05",
+    "timestamp": "2025-06-25T11:15:00+02:00",
+    "method": "autoencoder",
+    "score": "8.983563423156738",
+    "rang_in_methode": "11",
+    "segment": "mittag",
+    "wochentag": "Wednesday",
+    "feiertag": "nein",
+    "plot_datei": "plot_059.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_05",
+    "timestamp": "2025-06-25 11:15:00+02:00",
+    "method": "autoencoder",
+    "segment": "mittag",
+    "value_kw": 17.312,
+    "expected_kw": 0.0,
+    "diff_kw": 17.312,
+    "diff_pct": null,
+    "n_vergleichstage": 7,
+    "temperatur_c": 26.9,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 20.9,
+    "spotpreis_ct_pro_kwh": 0.007,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 5.686,
+    "dauer_h": 0.25,
+    "mehrkosten_eur": 0.0
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_05\n- Zeitpunkt: 25.06.2025 11:15, Mittwoch\n- Feiertag: nein\n- Detektion durch: autoencoder\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 17.3 kW\n- Erwartete Last (Median Vergleichstage): 0.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +17.3 kW = n/a (Erwartung 0 kW, jede Last ist Abweichung) %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 26.9 °C, trocken, Niederschlag 0.0 mm, Wind 21 km/h\n- Spotpreis (Stundenwert): 0.01 ct/kWh (24h-Schnitt 5.69 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~0.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Unvorhergesehene Kundendurchsatz, möglicherweise durch Marktag oder Veranstaltung",
+    "handlungsempfehlungen": [
+      "Kontrollieren und eventuell reduzieren der Beleuchtung in den Bereichen mit erhöhtem Verbrauch",
+      "Überwachen der HVAC-Systeme auf unnötige Betriebszeiten, insbesondere im Bereich des Gartencenters",
+      "Erheben von Kundendaten um zu bestätigen oder zu identifizieren ob eine Veranstaltung oder Marktag die Ursache ist"
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.22,
+  "attempts": 1
+}

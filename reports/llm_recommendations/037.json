@@ -1,0 +1,51 @@
+{
+  "nr": "37",
+  "annotation": {
+    "nr": "37",
+    "site": "Baumarkt_15",
+    "timestamp": "2023-04-08 08:00:00+02:00",
+    "method": "arima",
+    "score": "15.388698744112467",
+    "rang_in_methode": "20",
+    "segment": "vormittag",
+    "wochentag": "Saturday",
+    "feiertag": "nein",
+    "plot_datei": "plot_037.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_15",
+    "timestamp": "2023-04-08 08:00:00+02:00",
+    "method": "arima",
+    "segment": "vormittag",
+    "value_kw": 110.16,
+    "expected_kw": 37.52,
+    "diff_kw": 72.64,
+    "diff_pct": 193.6,
+    "n_vergleichstage": 7,
+    "temperatur_c": 4.0,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 8.3,
+    "spotpreis_ct_pro_kwh": 13.32,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 11.411,
+    "dauer_h": 2.75,
+    "mehrkosten_eur": 26.61
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_15\n- Zeitpunkt: 08.04.2023 08:00, Samstag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 110.2 kW\n- Erwartete Last (Median Vergleichstage): 37.5 (Median aus 7 Vergleichstagen) kW\n- Differenz: +72.6 kW = +193.6 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 4.0 °C, trocken, Niederschlag 0.0 mm, Wind 8 km/h\n- Spotpreis (Stundenwert): 13.32 ct/kWh (24h-Schnitt 11.41 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 26.61 EUR (über ~2.75 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Erwarming der Verkaufsfläche und Lüftung trotz geschlossener Filiale, möglicherweise auch Kühlschränke im Gartencenter",
+    "handlungsempfehlungen": [
+      "Zeitprogramm der HVAC-Steuerung auf Öffnungszeiten einstellen (ab Samstag)",
+      "Prüfen und eventuell reduzieren der Kühlleistung in den Kühlschränken",
+      "Wartungstermin vereinbaren, um Regelungen zu überprüfen"
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.18,
+  "attempts": 1
+}

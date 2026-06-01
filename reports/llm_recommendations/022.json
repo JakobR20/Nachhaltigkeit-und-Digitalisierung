@@ -1,0 +1,51 @@
+{
+  "nr": "22",
+  "annotation": {
+    "nr": "22",
+    "site": "Baumarkt_08",
+    "timestamp": "2023-03-03 01:00:00+01:00",
+    "method": "cluster_segment",
+    "score": "9.167175998110999",
+    "rang_in_methode": "13",
+    "segment": "nachts",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_022.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_08",
+    "timestamp": "2023-03-03 01:00:00+01:00",
+    "method": "cluster_segment",
+    "segment": "nachts",
+    "value_kw": 56.86,
+    "expected_kw": 15.708,
+    "diff_kw": 41.152,
+    "diff_pct": 262.0,
+    "n_vergleichstage": 7,
+    "temperatur_c": 1.2,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 6.5,
+    "spotpreis_ct_pro_kwh": 13.018,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 14.498,
+    "dauer_h": 6.0,
+    "mehrkosten_eur": 32.14
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_08\n- Zeitpunkt: 03.03.2023 01:00, Freitag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: nachts\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 56.9 kW\n- Erwartete Last (Median Vergleichstage): 15.7 (Median aus 7 Vergleichstagen) kW\n- Differenz: +41.2 kW = +262.0 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 1.2 °C, trocken, Niederschlag 0.0 mm, Wind 6 km/h\n- Spotpreis (Stundenwert): 13.02 ct/kWh (24h-Schnitt 14.50 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 32.14 EUR (über ~6 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Nachtabsenkung der HVAC-Systeme wurde nicht eingehalten, obwohl das Geschäft normal geöffnet war.",
+    "handlungsempfehlungen": [
+      "Überprüfen und einstellen des Zeitprogramms für die HVAC-Systeme, um Nachtabsenkungen sicherzustellen",
+      "Prüfung der Regelungstechnik zur Überwachung der Öffnungszeiten und automatischen Absenkung",
+      "Erhöhung der Wartungsfrequenz der HVAC-Systeme, da möglicherweise ein Defekt das System in den Nachtschichtbetrieb gezwungen hat"
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.59,
+  "attempts": 1
+}

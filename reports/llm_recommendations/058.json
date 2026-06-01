@@ -1,0 +1,51 @@
+{
+  "nr": "58",
+  "annotation": {
+    "nr": "58",
+    "site": "Baumarkt_05",
+    "timestamp": "2025-06-06T10:30:00+02:00",
+    "method": "autoencoder",
+    "score": "10.20142936706543",
+    "rang_in_methode": "4",
+    "segment": "vormittag",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_058.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_05",
+    "timestamp": "2025-06-06 10:30:00+02:00",
+    "method": "autoencoder",
+    "segment": "vormittag",
+    "value_kw": 24.752,
+    "expected_kw": 0.0,
+    "diff_kw": 24.752,
+    "diff_pct": null,
+    "n_vergleichstage": 7,
+    "temperatur_c": 18.5,
+    "wetter_beschreibung": "Regen",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 33.5,
+    "spotpreis_ct_pro_kwh": -0.001,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 6.071,
+    "dauer_h": 0.25,
+    "mehrkosten_eur": 0.0
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_05\n- Zeitpunkt: 06.06.2025 10:30, Freitag\n- Feiertag: nein\n- Detektion durch: autoencoder\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 24.8 kW\n- Erwartete Last (Median Vergleichstage): 0.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +24.8 kW = n/a (Erwartung 0 kW, jede Last ist Abweichung) %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 18.5 °C, Regen, Niederschlag 0.0 mm, Wind 34 km/h\n- Spotpreis (Stundenwert): -0.00 ct/kWh (24h-Schnitt 6.07 ct/kWh)\n  → Spotpreis ist negativ — Stromverbrauch wird in dieser Stunde belohnt, nicht bestraft.\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~0.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Ungeplante Klimaanpassungen oder Fehler in der HVAC-Steuerung, da die erwartete Last nahe null ist und es keine besondere Kundenaktivität gibt.",
+    "handlungsempfehlungen": [
+      "Überprüfen Sie den Status der Klimaanlagen und Heizsysteme, um unerwartete Aktivitäten zu identifizieren.",
+      "Prüfen Sie die Zeitprogramme der HVAC-Systeme auf mögliche Fehler oder Unregelmäßigkeiten.",
+      "Kontaktieren Sie den Anbieter der Energieversorgung, um eine Überprüfung der Stromzähler und -leitungen zu vereinbaren."
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.95,
+  "attempts": 1
+}

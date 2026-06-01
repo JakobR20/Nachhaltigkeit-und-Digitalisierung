@@ -1,0 +1,51 @@
+{
+  "nr": "60",
+  "annotation": {
+    "nr": "60",
+    "site": "Baumarkt_06",
+    "timestamp": "2023-08-11T08:00:00+02:00",
+    "method": "autoencoder",
+    "score": "9.36862850189209",
+    "rang_in_methode": "9",
+    "segment": "vormittag",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_060.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_06",
+    "timestamp": "2023-08-11 08:00:00+02:00",
+    "method": "autoencoder",
+    "segment": "vormittag",
+    "value_kw": 126.916,
+    "expected_kw": 32.656,
+    "diff_kw": 94.26,
+    "diff_pct": 288.6,
+    "n_vergleichstage": 7,
+    "temperatur_c": 13.6,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 1.8,
+    "spotpreis_ct_pro_kwh": 11.507,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 10.453,
+    "dauer_h": 2.5,
+    "mehrkosten_eur": 27.12
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 11.08.2023 08:00, Freitag\n- Feiertag: nein\n- Detektion durch: autoencoder\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 126.9 kW\n- Erwartete Last (Median Vergleichstage): 32.7 (Median aus 7 Vergleichstagen) kW\n- Differenz: +94.3 kW = +288.6 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 13.6 °C, trocken, Niederschlag 0.0 mm, Wind 2 km/h\n- Spotpreis (Stundenwert): 11.51 ct/kWh (24h-Schnitt 10.45 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 27.12 EUR (über ~2.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Erwarming der Verkaufsfläche und Lüftung trotz geringer Temperatur, da es ein Freitagmorgen ist.",
+    "handlungsempfehlungen": [
+      "Prüfen, ob die Erwärmungs- und Lüftungssysteme korrekt auf den tatsächlichen Bedarf eingestellt sind",
+      "Überprüfung der Regellogik zur Temperatursteuerung um 8:00 Uhr",
+      "Erhöhung der Nachtabsenkung, falls möglich"
+    ],
+    "confidence": 0.9
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 5.67,
+  "attempts": 1
+}

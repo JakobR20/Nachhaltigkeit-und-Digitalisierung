@@ -1,0 +1,51 @@
+{
+  "nr": "53",
+  "annotation": {
+    "nr": "53",
+    "site": "Baumarkt_24",
+    "timestamp": "2024-05-31 14:30:00+02:00",
+    "method": "zscore_stl",
+    "score": "9.019510099691345",
+    "rang_in_methode": "7",
+    "segment": "nachmittag",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_053.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_24",
+    "timestamp": "2024-05-31 14:30:00+02:00",
+    "method": "zscore_stl",
+    "segment": "nachmittag",
+    "value_kw": 79.532,
+    "expected_kw": 45.12,
+    "diff_kw": 34.412,
+    "diff_pct": 76.3,
+    "n_vergleichstage": 7,
+    "temperatur_c": 16.4,
+    "wetter_beschreibung": "Regen",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 7.9,
+    "spotpreis_ct_pro_kwh": 6.53,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 9.593,
+    "dauer_h": 2.5,
+    "mehrkosten_eur": 5.62
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_24\n- Zeitpunkt: 31.05.2024 14:30, Freitag\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 79.5 kW\n- Erwartete Last (Median Vergleichstage): 45.1 (Median aus 7 Vergleichstagen) kW\n- Differenz: +34.4 kW = +76.3 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 16.4 °C, Regen, Niederschlag 0.0 mm, Wind 8 km/h\n- Spotpreis (Stundenwert): 6.53 ct/kWh (24h-Schnitt 9.59 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 5.62 EUR (über ~2.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Erhöhte Beleuchtung und HVAC-Last im Nachmittag aufgrund erhöhter Kundenaufkommen oder Defekt in der Steuerung.",
+    "handlungsempfehlungen": [
+      "Überwachung der Kassen- und Kamera-Daten, um Kundenaufkommen zu bestätigen oder zu korrigieren",
+      "Prüfung und Anpassung des Zeitprogramms für Beleuchtung und HVAC auf die tatsächlichen Bedürfnisse",
+      "Soforthandlungscheck durchführen, um Defekte in der Steuerung oder Regelung zu erkennen"
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.29,
+  "attempts": 1
+}

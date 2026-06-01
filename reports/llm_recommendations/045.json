@@ -1,0 +1,51 @@
+{
+  "nr": "45",
+  "annotation": {
+    "nr": "45",
+    "site": "Baumarkt_19",
+    "timestamp": "2024-02-21 12:00:00+01:00",
+    "method": "cluster_segment",
+    "score": "10.462471984585953",
+    "rang_in_methode": "4",
+    "segment": "mittag",
+    "wochentag": "Wednesday",
+    "feiertag": "nein",
+    "plot_datei": "plot_045.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_19",
+    "timestamp": "2024-02-21 12:00:00+01:00",
+    "method": "cluster_segment",
+    "segment": "mittag",
+    "value_kw": 9.852,
+    "expected_kw": 68.956,
+    "diff_kw": -59.104,
+    "diff_pct": -85.7,
+    "n_vergleichstage": 7,
+    "temperatur_c": 9.1,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 17.6,
+    "spotpreis_ct_pro_kwh": 5.301,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 6.015,
+    "dauer_h": 3.0,
+    "mehrkosten_eur": 0.0
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_19\n- Zeitpunkt: 21.02.2024 12:00, Mittwoch\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 9.9 kW\n- Erwartete Last (Median Vergleichstage): 69.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: -59.1 kW = -85.7 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 9.1 °C, trocken, Niederschlag 0.0 mm, Wind 18 km/h\n- Spotpreis (Stundenwert): 5.30 ct/kWh (24h-Schnitt 6.01 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Kühlanlagen im Gartencenter und Getränkebereich laufen trotz niedriger Aufladekosten, da der Feiertag am Vortag war.",
+    "handlungsempfehlungen": [
+      "Prüfen, ob die Kühlanlagen in den Bereichen reduziert werden können oder ausgeschaltet sind, da sie unnötig laufen.",
+      "Überprüfen, ob die Verkaufsfläche und Beleuchtung im Gartencenter und Getränkebereich überflüssig eingeschaltet sind.",
+      "Warten auf den Feiertag am 21.02.2024 und reduzieren oder ausschalten der Anlagen, wenn möglich."
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 7.08,
+  "attempts": 1
+}

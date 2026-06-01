@@ -1,0 +1,51 @@
+{
+  "nr": "44",
+  "annotation": {
+    "nr": "44",
+    "site": "Baumarkt_19",
+    "timestamp": "2024-01-13 12:00:00+01:00",
+    "method": "cluster_segment",
+    "score": "10.48185727401731",
+    "rang_in_methode": "3",
+    "segment": "mittag",
+    "wochentag": "Saturday",
+    "feiertag": "nein",
+    "plot_datei": "plot_044.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_19",
+    "timestamp": "2024-01-13 12:00:00+01:00",
+    "method": "cluster_segment",
+    "segment": "mittag",
+    "value_kw": 58.44,
+    "expected_kw": 53.3,
+    "diff_kw": 5.14,
+    "diff_pct": 9.6,
+    "n_vergleichstage": 7,
+    "temperatur_c": -1.5,
+    "wetter_beschreibung": "Schneeregen",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 20.2,
+    "spotpreis_ct_pro_kwh": 7.035,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 9.25,
+    "dauer_h": 3.0,
+    "mehrkosten_eur": 1.08
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_19\n- Zeitpunkt: 13.01.2024 12:00, Samstag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 58.4 kW\n- Erwartete Last (Median Vergleichstage): 53.3 (Median aus 7 Vergleichstagen) kW\n- Differenz: +5.1 kW = +9.6 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): -1.5 °C, Schneeregen, Niederschlag 0.0 mm, Wind 20 km/h\n- Spotpreis (Stundenwert): 7.04 ct/kWh (24h-Schnitt 9.25 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 1.08 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "mittel",
+    "vermutete_ursache": "Beleuchtung der Verkaufsfläche läuft trotz geschlossener Filiale, da noch Waren eingespeist werden oder Reinigung stattfindet.",
+    "handlungsempfehlungen": [
+      "Überwachung der Beleuchtungsstatus über Nacht und am frühen Morgen einrichten, um Überlastungen zu vermeiden.",
+      "Prüfung der Regelung für die Beleuchtung im Bereich der Verkaufsfläche, ob sie korrekt auf geschlossene Öffnungszeiten eingestellt ist.",
+      "Erstellen eines Protokolls mit den beteiligten Mitarbeitern über die Notwendigkeit der Beleuchtung während der Reinigung oder Warenanlieferung."
+    ],
+    "confidence": 0.8
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 7.12,
+  "attempts": 1
+}

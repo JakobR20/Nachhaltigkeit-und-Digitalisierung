@@ -1,0 +1,51 @@
+{
+  "nr": "3",
+  "annotation": {
+    "nr": "3",
+    "site": "Baumarkt_06",
+    "timestamp": "2023-01-13 08:00:00+01:00",
+    "method": "arima",
+    "score": "-16.662834450609463",
+    "rang_in_methode": "14",
+    "segment": "vormittag",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_003.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_06",
+    "timestamp": "2023-01-13 08:00:00+01:00",
+    "method": "arima",
+    "segment": "vormittag",
+    "value_kw": 53.476,
+    "expected_kw": 53.172,
+    "diff_kw": 0.304,
+    "diff_pct": 0.6,
+    "n_vergleichstage": 1,
+    "temperatur_c": 8.5,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 23.8,
+    "spotpreis_ct_pro_kwh": 10.595,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 6.973,
+    "dauer_h": 0.5,
+    "mehrkosten_eur": 0.02
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 13.01.2023 08:00, Freitag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 53.5 kW\n- Erwartete Last (Median Vergleichstage): 53.2 (Median aus 1 Vergleichstagen) kW\n- Differenz: +0.3 kW = +0.6 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 8.5 °C, trocken, Niederschlag 0.0 mm, Wind 24 km/h\n- Spotpreis (Stundenwert): 10.60 ct/kWh (24h-Schnitt 6.97 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.02 EUR (über ~0.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "niedrig",
+    "vermutete_ursache": "Geringe Last vermutlich aufgrund geringer Kundenaufkommen am Freitagmorgen, da der Markt nur teilweise geöffnet ist.",
+    "handlungsempfehlungen": [
+      "Kundenzahlen und Öffnungszeiten des Marktes überprüfen",
+      "Beleuchtung in nicht benötigten Bereichen abschalten",
+      "Überwachung der Anomalie für weitere Tage, um Trends zu erkennen"
+    ],
+    "confidence": 0.75
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 5.36,
+  "attempts": 1
+}

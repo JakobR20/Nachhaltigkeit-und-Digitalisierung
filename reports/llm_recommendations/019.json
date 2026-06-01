@@ -1,0 +1,51 @@
+{
+  "nr": "19",
+  "annotation": {
+    "nr": "19",
+    "site": "Baumarkt_06",
+    "timestamp": "2026-02-20 07:30:00+01:00",
+    "method": "zscore_stl",
+    "score": "9.624892101822862",
+    "rang_in_methode": "1",
+    "segment": "vormittag",
+    "wochentag": "Friday",
+    "feiertag": "nein",
+    "plot_datei": "plot_019.png",
+    "also_flagged_by": "arima",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_06",
+    "timestamp": "2026-02-20 07:30:00+01:00",
+    "method": "zscore_stl",
+    "segment": "vormittag",
+    "value_kw": 153.192,
+    "expected_kw": 21.972,
+    "diff_kw": 131.22,
+    "diff_pct": 597.2,
+    "n_vergleichstage": 7,
+    "temperatur_c": -3.5,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 9.0,
+    "spotpreis_ct_pro_kwh": 10.921,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 9.516,
+    "dauer_h": 2.5,
+    "mehrkosten_eur": 35.83
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 20.02.2026 07:30, Freitag\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 153.2 kW\n- Erwartete Last (Median Vergleichstage): 22.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +131.2 kW = +597.2 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): -3.5 °C, trocken, Niederschlag 0.0 mm, Wind 9 km/h\n- Spotpreis (Stundenwert): 10.92 ct/kWh (24h-Schnitt 9.52 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 35.83 EUR (über ~2.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Heizung läuft stärker als nötig, da der Raum noch nicht in den Normalbetrieb übergegangen ist.",
+    "handlungsempfehlungen": [
+      "Heizungsregelung prüfen und bei Bedarf anpassen, um die Temperatur langsamer zu steuern",
+      "Überwachung der Raumtemperatur einrichten, um unnötige Heizenergie zu vermeiden",
+      "Wartungstermin vereinbaren, um mögliche Defekte in der Regelung zu prüfen"
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.14,
+  "attempts": 1
+}

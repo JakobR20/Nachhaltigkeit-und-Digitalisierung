@@ -1,0 +1,51 @@
+{
+  "nr": "29",
+  "annotation": {
+    "nr": "29",
+    "site": "Baumarkt_14",
+    "timestamp": "2024-04-07 01:15:00+02:00",
+    "method": "zscore_stl",
+    "score": "8.322969097640412",
+    "rang_in_methode": "17",
+    "segment": "nachts",
+    "wochentag": "Sunday",
+    "feiertag": "nein",
+    "plot_datei": "plot_029.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_14",
+    "timestamp": "2024-04-07 01:15:00+02:00",
+    "method": "zscore_stl",
+    "segment": "nachts",
+    "value_kw": 6.112,
+    "expected_kw": 4.02,
+    "diff_kw": 2.092,
+    "diff_pct": 52.0,
+    "n_vergleichstage": 7,
+    "temperatur_c": 14.6,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 7.9,
+    "spotpreis_ct_pro_kwh": 0.009,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 2.653,
+    "dauer_h": 0.25,
+    "mehrkosten_eur": 0.0
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_14\n- Zeitpunkt: 07.04.2024 01:15, Sonntag\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: nachts\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 6.1 kW\n- Erwartete Last (Median Vergleichstage): 4.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +2.1 kW = +52.0 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 14.6 °C, trocken, Niederschlag 0.0 mm, Wind 8 km/h\n- Spotpreis (Stundenwert): 0.01 ct/kWh (24h-Schnitt 2.65 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~0.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "niedrig",
+    "vermutete_ursache": "Nachtlast ist höher als erwartet, vermutlich unerwünschte Betätigung der Kühlanlagen im Gartencenter und Getränkebereich.",
+    "handlungsempfehlungen": [
+      "Überprüfen der Regelung der Kühlanlagen auf unnötige Betätigung",
+      "Prüfung der Beleuchtungsstatus in den Kühlzonen, ob diese nicht überflüssig angeschaltet sind",
+      "Wartungstermin vereinbaren, um die Anlagen zu inspizieren und eventuelle Defekte zu erkennen"
+    ],
+    "confidence": 0.8
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.46,
+  "attempts": 1
+}

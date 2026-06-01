@@ -1,0 +1,51 @@
+{
+  "nr": "57",
+  "annotation": {
+    "nr": "57",
+    "site": "Baumarkt_25",
+    "timestamp": "2024-12-21 18:15:00+01:00",
+    "method": "arima",
+    "score": "-16.176606833287337",
+    "rang_in_methode": "16",
+    "segment": "nachmittag",
+    "wochentag": "Saturday",
+    "feiertag": "nein",
+    "plot_datei": "plot_057.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_25",
+    "timestamp": "2024-12-21 18:15:00+01:00",
+    "method": "arima",
+    "segment": "nachmittag",
+    "value_kw": 6.176,
+    "expected_kw": 10.284,
+    "diff_kw": -4.108,
+    "diff_pct": -39.9,
+    "n_vergleichstage": 7,
+    "temperatur_c": 5.7,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 25.2,
+    "spotpreis_ct_pro_kwh": 2.795,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 3.646,
+    "dauer_h": 2.0,
+    "mehrkosten_eur": 0.0
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_25\n- Zeitpunkt: 21.12.2024 18:15, Samstag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 6.2 kW\n- Erwartete Last (Median Vergleichstage): 10.3 (Median aus 7 Vergleichstagen) kW\n- Differenz: -4.1 kW = -39.9 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 5.7 °C, trocken, Niederschlag 0.0 mm, Wind 25 km/h\n- Spotpreis (Stundenwert): 2.79 ct/kWh (24h-Schnitt 3.65 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~2 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "mittel",
+    "vermutete_ursache": "Niedrigere Beleuchtung im Gartencenter und Getränkebereich, da der Feiertag am Samstag keine besondere Anziehungskraft hat.",
+    "handlungsempfehlungen": [
+      "Prüfen, ob die Beleuchtung im Gartencenter und Getränkebereich reduziert ist",
+      "Überprüfung der Regelung für den Feiertagsmodus in der Steuerung",
+      "Beobachten des Verbrauchs über 1-2 Tage, um langfristige Trends zu identifizieren"
+    ],
+    "confidence": 0.8
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 6.04,
+  "attempts": 1
+}

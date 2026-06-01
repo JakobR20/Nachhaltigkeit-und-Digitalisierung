@@ -1,0 +1,51 @@
+{
+  "nr": "47",
+  "annotation": {
+    "nr": "47",
+    "site": "Baumarkt_19",
+    "timestamp": "2025-08-03 02:00:00+02:00",
+    "method": "cluster_segment",
+    "score": "9.843534040559799",
+    "rang_in_methode": "6",
+    "segment": "nachts",
+    "wochentag": "Sunday",
+    "feiertag": "nein",
+    "plot_datei": "plot_047.png",
+    "also_flagged_by": "",
+    "label": "plausibel_anomal",
+    "notiz": ""
+  },
+  "context": {
+    "site": "Baumarkt_19",
+    "timestamp": "2025-08-03 02:00:00+02:00",
+    "method": "cluster_segment",
+    "segment": "nachts",
+    "value_kw": 60.4,
+    "expected_kw": 7.276,
+    "diff_kw": 53.124,
+    "diff_pct": 730.1,
+    "n_vergleichstage": 7,
+    "temperatur_c": 15.3,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 9.0,
+    "spotpreis_ct_pro_kwh": 7.195,
+    "spotpreis_durchschnitt_24h_ct_pro_kwh": 6.431,
+    "dauer_h": 6.0,
+    "mehrkosten_eur": 22.93
+  },
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_19\n- Zeitpunkt: 03.08.2025 02:00, Sonntag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: nachts\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 60.4 kW\n- Erwartete Last (Median Vergleichstage): 7.3 (Median aus 7 Vergleichstagen) kW\n- Differenz: +53.1 kW = +730.1 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 15.3 °C, trocken, Niederschlag 0.0 mm, Wind 9 km/h\n- Spotpreis (Stundenwert): 7.20 ct/kWh (24h-Schnitt 6.43 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 22.93 EUR (über ~6 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "recommendation": {
+    "schweregrad": "hoch",
+    "vermutete_ursache": "Heizung/Lüftung läuft trotz geschlossener Filiale und günstigen Wetterbedingungen, vermutlich due zu hohem Raumtemperaturstand oder Defekt in der Regelung.",
+    "handlungsempfehlungen": [
+      "Überprüfen der Raumtemperatur auf den Sensoren und die Heizungs-/Lüftungsregelung für Rückschläge oder Defekte.",
+      "Aktivieren der Nachtabsenkung in der Steuerung, um unnötige Energie zu sparen.",
+      "Wartungstermin vereinbaren, um den Heiz- und Lüftungssystemen eine gründliche Prüfung zukommen zu lassen."
+    ],
+    "confidence": 0.85
+  },
+  "llm_model": "qwen2.5:7b",
+  "processing_time_s": 7.16,
+  "attempts": 1
+}
