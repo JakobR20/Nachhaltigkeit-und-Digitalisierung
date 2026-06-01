@@ -419,3 +419,48 @@ Spotpreis bleibt der echte (ggf. ≤ 0) Wert erhalten und wird im Prompt erläut
 Stichproben der 5 Test-Anomalien (exakte Werte, die das LLM in Phase 4 sieht):
 `reports/llm_evaluation/full_context_samples.md`. Tests:
 `tests/test_context.py` (Felder, Wetter-Fallback, Kosten-Edge-Cases).
+
+## LLM-Handlungsempfehlung: Pipeline-Lauf (Phase 4)
+
+Die Produktionspipeline (`scripts/run_llm_pipeline.py`) lief über alle 66 als
+`plausibel_anomal` annotierten Anomalien: je Anomalie `build_full_context` →
+V2-Production-Prompt (`SYSTEM_PROMPT_PRODUCTION`) → Ollama-Call (`qwen2.5:7b`,
+`temperature=0,2`, fester Seed, Schema grammar-erzwungen) → Pydantic-Validierung,
+mit bis zu 3 Wiederholungen bei Parse-/HTTP-Fehlern.
+
+**Lauf-Statistik:** 66/66 erfolgreich (100 %), **0 Retries**, **0 Schema-Fehler**.
+Wall-Time 8:01 min gesamt, 6,6 s pro Anomalie (warmes Modell). Die strukturelle
+Fehlerquote von 0 % bestätigt die zweistufige Garantie (Grammatik + Pydantic) aus
+Phase 2 unter Volllast.
+
+**Schweregrad-Verteilung** als Sanity-Check: hoch 32, mittel 25, niedrig 9. Die
+Spreizung über alle drei Stufen zeigt **keinen** Modell-Bias zu „alles hoch"; das
+Modell stuft auch milde/ambivalente Anomalien entsprechend ein.
+
+**Konfidenz-Kalibrierung pro Methode** (alle im V2-Band 0,75–0,9):
+
+| Methode | n | mean | min–max |
+|---|---|---|---|
+| zscore_stl | 20 | 0,835 | 0,80–0,85 |
+| arima | 17 | 0,818 | 0,75–0,85 |
+| cluster_segment | 20 | 0,825 | 0,75–0,85 |
+| autoencoder | 9 | 0,844 | 0,80–0,90 |
+
+Zwei methodisch interessante Beobachtungen: Der **Autoencoder** erreicht die höchste
+mittlere Konfidenz (0,844) — konsistent mit seiner Pro-Site-Normierung und dem Fokus
+auf die Tagesform, der die vorgelegten Anomalien als deutlich erkennbar macht.
+**ARIMA** hat die niedrigste (0,818) — seine Forecast-Abweichungen sind nuancierter,
+und das LLM stuft sie als weniger eindeutig ein. Die Konfidenz ist hier die des
+*Empfehlungsmodells* zur vorgelegten Anomalie, nicht die des Detektors selbst.
+
+**Limitation — HVAC/Beleuchtungs-Default-Hypothese:** Das LLM tendiert dazu, bei
+mehrdeutigen Anomalien HVAC-Steuerungsfehler oder Beleuchtungs-Anomalien als primäre
+Hypothese vorzuschlagen — eine erfahrungsbasierte Default-Erklärung für
+Einzelhandelsgebäude. Diese Empfehlungen sind als **Prüf-Aufträge an das
+Facility-Management** zu verstehen, nicht als verifizierte Diagnose. Eine quantitative
+Bewertung dieser Hypothesen-Qualität erfordert Vor-Ort-Verifizierung, die im Rahmen
+dieser Arbeit nicht möglich war.
+
+**Reproduzierbarkeits-Artefakte:** `reports/llm_recommendations.csv` (66 Zeilen,
+12 Spalten) als flache Tabelle; `reports/llm_recommendations/{001..066}.json` mit
+vollem Kontext, Prompt und Response je Anomalie für den Dashboard-Detailabruf.
