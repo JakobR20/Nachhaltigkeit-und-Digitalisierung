@@ -3025,6 +3025,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "seaborn" },
     { name = "statsmodels" },
+    { name = "streamlit" },
     { name = "tenacity" },
     { name = "tqdm" },
 ]
@@ -3070,6 +3071,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "seaborn", specifier = ">=0.13" },
     { name = "statsmodels", specifier = ">=0.14" },
+    { name = "streamlit", specifier = ">=1.57.0" },
     { name = "streamlit", marker = "extra == 'dashboard'", specifier = ">=1.33" },
     { name = "tenacity", specifier = ">=8.2" },
     { name = "tensorflow", marker = "extra == 'deep'", specifier = "==2.16.2" },
