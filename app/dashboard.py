@@ -31,6 +31,7 @@ from app.data_access import (  # noqa: E402
     load_comparison_markdown,
     load_config,
     load_flag_matrix,
+    load_recommendation_detail,
     load_recommendations,
     load_scores_for_site,
     load_site_timeseries,
@@ -254,10 +255,93 @@ def page_site_detail() -> None:
                "Marker = geflaggte Anomalien je aktiver Methode (Slider-abhängig).")
 
 
+def page_anomaly_detail() -> None:
+    cfg = load_config()
+    colors = cfg["method_colors"]
+    recs = load_recommendations()
+
+    labels = [f"nr {r.nr} · {r.site} · {r.method} · {r.timestamp}"
+              for r in recs.itertuples()]
+    idx = st.selectbox("Anomalie", range(len(labels)), format_func=lambda i: labels[i])
+    row = recs.iloc[idx]
+    nr = row["nr"]
+    detail = load_recommendation_detail(nr)
+    ctx, rec, ann = detail["context"], detail["recommendation"], detail["annotation"]
+
+    # Lastgang ±3 Tage
+    series = load_site_timeseries(row["site"])
+    ts = pd.Timestamp(row["timestamp"])
+    lo, hi = ts - pd.Timedelta(days=3), ts + pd.Timedelta(days=3)
+    win = series[(series.index >= lo) & (series.index <= hi)]
+    fig = go.Figure()
+    fig.add_scatter(x=win.index, y=win.values, mode="lines", name="Last (kW)",
+                    line=dict(color="#888", width=1))
+    fig.add_scatter(x=[ts], y=[ctx.get("value_kw")], mode="markers", name="Anomalie",
+                    marker=dict(color=colors.get(row["method"], "#d62728"), size=14, symbol="x"))
+    fig.update_layout(height=360, margin=dict(t=10, b=10), yaxis_title="kW",
+                      legend=dict(orientation="h", y=1.05))
+    st.plotly_chart(fig, width="stretch")
+
+    left, right = st.columns(2)
+
+    with left:
+        sev = rec["schweregrad"]
+        st.markdown(f"### :red[●] LLM-Empfehlung — Schweregrad: "
+                    f":{_sev_badge(sev)}[{sev}]  ·  Konfidenz {rec['confidence']:.2f}")
+        st.markdown(f"**Vermutete Ursache:** {rec['vermutete_ursache']}")
+        for i, e in enumerate(rec["handlungsempfehlungen"], 1):
+            st.markdown(f"{i}. {e}")
+        st.caption(f"Modell: {detail.get('llm_model')} · "
+                   f"{detail.get('processing_time_s')} s · Versuche: {detail.get('attempts')}")
+
+    with right:
+        st.markdown("**Kontext (deterministisch berechnet)**")
+        st.table({
+            "Feld": ["Aktuelle Last", "Erwartete Last", "Differenz",
+                     "Wetter", "Spotpreis", "Geschätzte Mehrkosten"],
+            "Wert": [
+                f"{ctx.get('value_kw')} kW",
+                f"{ctx.get('expected_kw')} kW",
+                f"{ctx.get('diff_kw')} kW ({ctx.get('diff_pct')} %)",
+                f"{ctx.get('temperatur_c')} °C, {ctx.get('wetter_beschreibung')}",
+                f"{ctx.get('spotpreis_ct_pro_kwh')} ct/kWh",
+                f"{ctx.get('mehrkosten_eur')} EUR (~{ctx.get('dauer_h')} h)",
+            ],
+        })
+
+    st.divider()
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Score & Komplementarität (κ zu anderen Methoden)**")
+        km = kappa_matrix()
+        method = row["method"]
+        st.markdown(f"Methode **{method}** · Score `{float(ann['score']):.2f}` · "
+                    f"Rang {ann['rang_in_methode']} · Segment {ann['segment']}")
+        krows = [{"vs. Methode": m, "κ": km.get((method, m))}
+                 for m in METHODS if m != method]
+        st.dataframe(krows, width="stretch", hide_index=True)
+    with c2:
+        st.markdown("**Annotation**")
+        plaus = ann.get("label") or "—"
+        st.markdown(f"Plausibilitäts-Label: **{plaus}**")
+        if ann.get("also_flagged_by"):
+            st.markdown(f"Auch geflaggt von: {ann['also_flagged_by']}")
+        st.markdown(f"Feiertag: {ann.get('feiertag')} · Wochentag: {ann.get('wochentag')}")
+
+    csv_line = row.to_frame().T.to_csv(index=False)
+    st.download_button("CSV-Zeile exportieren", csv_line,
+                       file_name=f"anomalie_{nr}.csv", mime="text/csv")
+
+
+def _sev_badge(sev: str) -> str:
+    return {"hoch": "red", "mittel": "orange", "niedrig": "green"}.get(sev, "gray")
+
+
 PAGES = {
     "Übersicht": page_overview,
     "Methodenvergleich": page_method_comparison,
     "Standort-Detail": page_site_detail,
+    "Anomalie-Detail": page_anomaly_detail,
 }
 
 

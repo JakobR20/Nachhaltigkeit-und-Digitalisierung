@@ -78,5 +78,15 @@ def load_comparison_markdown() -> str:
     return COMPARISON_MD.read_text(encoding="utf-8") if COMPARISON_MD.exists() else ""
 
 
+@st.cache_data
+def load_recommendation_detail(nr: str) -> dict[str, Any]:
+    """Full per-anomaly JSON (context + prompt + response) for the detail page."""
+    import json
+
+    path = ROOT / "reports" / "llm_recommendations" / f"{int(nr):03d}.json"
+    detail: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    return detail
+
+
 def sites() -> list[str]:
     return sorted(load_flag_matrix()["site"].tolist())
