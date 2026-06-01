@@ -383,3 +383,39 @@ Seed 42). **Gewählt: V2 (few-shot).** Begründung:
 Produktions-Prompt festgeschrieben als `SYSTEM_PROMPT_PRODUCTION` in
 `src/rausch_energy_anomaly/recommendations/prompts.py`. Evidenz (alle 15 Outputs,
 Kontext-Prompts, Laufzeiten): `reports/llm_evaluation/variant_comparison.md`.
+
+## LLM-Handlungsempfehlung: Kontext-Builder (Phase 3)
+
+`build_full_context()` in `src/rausch_energy_anomaly/recommendations/context.py`
+reichert jede Anomalie mit deterministisch berechneten Fakten an, die dem LLM als
+gegeben übergeben werden (das Modell schätzt keine Zahlen — Phase-1-Befund). Quellen
+sind die geparsten Caches `data/processed/{weather,prices}.parquet`; die Roh-JSONs
+unter `data/raw/{weather,prices}/` sind dokumentierter Fallback.
+
+**Lastgang-Fakten:** `value_kw` am Anomalie-Zeitpunkt aus der 15-min-Quelle
+(`load_category`), `expected_kw` als Median desselben Wochentags/derselben Uhrzeit
+über die 7 Vorwochen, plus `diff_kw`/`diff_pct`. `n_vergleichstage` macht eine dünne
+Baseline (nahe Datenstart) sichtbar; bei `expected_kw = 0` bleibt `diff_pct` `None`
+statt Division durch null.
+
+**Wetter:** Eine Würzburg-Referenzstation für **alle** Sites — die Standort-PLZ steht
+von Rausch noch aus, daher fällt `sites.yaml` einheitlich auf den Würzburg-Default
+zurück. Das ist der reale Datenstand, kein stiller Fallback, und wird im Prompt so
+ausgewiesen. Temperatur liegt im Parquet bereits in °C vor; Wind wird m/s → km/h
+konvertiert, `condition` nach Deutsch gemappt. Fehlt der Stundenwert, sind alle
+Wetterfelder `None` ("nicht verfügbar").
+
+**Strompreis:** Day-Ahead ist stündlich; der 15-min-Zeitstempel wird auf seine Stunde
+gerundet. EUR/MWh → ct/kWh. Zusätzlich der gleitende 24h-Schnitt als Kontext.
+
+**Mehrkosten (im Code, nie im LLM):** `mehrkosten = diff_kw · dauer_h · preis`. Die
+Dauer ist methodenabhängig: bei `cluster_segment` die native Segment-Dauer (nachts 6 h,
+vormittag 5 h, mittag 3 h, nachmittag 8 h); bei den Punkt-Methoden
+(zscore_stl/arima/autoencoder) aus dem Lastgang im ±2h-Fenster — Anzahl 15-min-Slots
+über `expected_kw · 1,2`, mal 0,25 h, begrenzt auf [0,25; 4,0] h. Unterverbrauch
+(`diff_kw ≤ 0`) ergibt 0 € (möglicher Effizienzgewinn statt Defekt). Bei negativem
+Spotpreis bleibt der echte (ggf. ≤ 0) Wert erhalten und wird im Prompt erläutert.
+
+Stichproben der 5 Test-Anomalien (exakte Werte, die das LLM in Phase 4 sieht):
+`reports/llm_evaluation/full_context_samples.md`. Tests:
+`tests/test_context.py` (Felder, Wetter-Fallback, Kosten-Edge-Cases).
