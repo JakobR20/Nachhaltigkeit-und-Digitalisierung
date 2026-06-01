@@ -45,3 +45,6 @@ models/*
 # Interim-Daten
 data/interim/*
 !data/interim/.gitkeep
+
+# Apple-Numbers-Binärquellen (CSV ist die getrackte Form)
+*.numbers
