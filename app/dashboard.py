@@ -20,6 +20,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+import pandas as pd  # noqa: E402
 import plotly.express as px  # noqa: E402
 import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
@@ -31,8 +32,13 @@ from app.data_access import (  # noqa: E402
     load_config,
     load_flag_matrix,
     load_recommendations,
+    load_scores_for_site,
+    load_site_timeseries,
+    sites,
 )
 from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
+
+sites_list = sites
 
 FIGURES = COMPARISON_MD.parent.parent / "figures"
 
@@ -169,9 +175,89 @@ def page_method_comparison() -> None:
             st.markdown(load_comparison_markdown())
 
 
+def _threshold_flags(
+    scores: pd.DataFrame, method: str, thresholds: dict[str, float]
+) -> pd.DataFrame:
+    """Re-threshold precomputed scores for one method (no re-inference)."""
+    sub = scores[scores["method"] == method]
+    if method == "zscore_stl":
+        return sub[sub["score"].abs() > thresholds["zscore"]]
+    if method == "arima":
+        # ARIMA keeps its precomputed flags (re-inference is ~10 min); sigma slider
+        # re-thresholds the standardised residual score instead.
+        return sub[sub["score"].abs() > thresholds["arima_sigma"]]
+    if method == "autoencoder":
+        # AE score is a reconstruction error; the percentile slider maps to a
+        # score quantile over this site's AE scores.
+        if sub.empty:
+            return sub
+        cut = sub["score"].quantile(thresholds["ae_pct"] / 100.0)
+        return sub[sub["score"] > cut]
+    return sub[sub["flag"] == True]  # noqa: E712 - cluster_segment keeps native flags
+
+
+def page_site_detail() -> None:
+    cfg = load_config()
+    colors = cfg["method_colors"]
+    special = cfg.get("special_sites", {})
+
+    st.subheader("Standort-Detail")
+    site = st.selectbox("Standort", sites_list())
+    if site in special:
+        st.warning(f"⚠️ {site}: {special[site]}")
+
+    series = load_site_timeseries(site)
+    scores = load_scores_for_site(site)
+
+    # Zeitfenster
+    tmin, tmax = series.index.min().date(), series.index.max().date()
+    c1, c2 = st.columns(2)
+    start = c1.date_input("Von", value=tmin, min_value=tmin, max_value=tmax)
+    end = c2.date_input("Bis", value=min(tmin + pd.Timedelta(days=30), tmax),
+                        min_value=tmin, max_value=tmax)
+    mask = (series.index.date >= start) & (series.index.date <= end)
+    window = series[mask]
+
+    st.sidebar.markdown("### Methoden")
+    active = {m: st.sidebar.checkbox(m, value=(m != "autoencoder"), key=f"m_{m}")
+              for m in METHODS}
+
+    st.sidebar.markdown("### Hyperparameter (Re-Thresholding)")
+    thresholds = {
+        "zscore": st.sidebar.slider("Z-Score-Schwelle", 1.0, 6.0, 3.0, 0.1),
+        "arima_sigma": st.sidebar.slider("ARIMA-Sigma", 1.0, 6.0, 3.0, 0.1),
+        "ae_pct": st.sidebar.slider("AE-Threshold-Perzentil", 90.0, 99.9, 99.0, 0.1),
+    }
+    st.sidebar.caption("Verschiebt die Flag-Schwelle auf vorberechneten Scores "
+                       "(keine Live-Inferenz; ARIMA-Kosten ~10 min).")
+
+    fig = go.Figure()
+    fig.add_scatter(x=window.index, y=window.values, mode="lines",
+                    name="Last (kW)", line=dict(color="#888", width=1))
+    wmin, wmax = window.index.min(), window.index.max()
+    for m in METHODS:
+        if not active[m]:
+            continue
+        flagged = _threshold_flags(scores, m, thresholds)
+        flagged = flagged[(flagged["timestamp"] >= wmin) & (flagged["timestamp"] <= wmax)]
+        if flagged.empty:
+            continue
+        yvals = window.reindex(flagged["timestamp"]).values
+        fig.add_scatter(x=flagged["timestamp"], y=yvals, mode="markers",
+                        name=f"{m} ({len(flagged)})",
+                        marker=dict(color=colors[m], size=7, symbol="x"))
+    fig.update_layout(height=480, margin=dict(t=10, b=10),
+                      yaxis_title="kW", xaxis_title="Zeit",
+                      legend=dict(orientation="h", y=1.05))
+    st.plotly_chart(fig, width="stretch")
+    st.caption(f"Lastgang {site} · {start} bis {end} · {len(window)} 15-min-Punkte. "
+               "Marker = geflaggte Anomalien je aktiver Methode (Slider-abhängig).")
+
+
 PAGES = {
     "Übersicht": page_overview,
     "Methodenvergleich": page_method_comparison,
+    "Standort-Detail": page_site_detail,
 }
 
 
