@@ -55,6 +55,25 @@ claude
 
 Claude liest beim Start automatisch `CLAUDE.md` und kennt damit Aufgabe, Daten und Methodenplan.
 
+### 5. LLM-Pipeline (Ollama)
+
+Die Handlungsempfehlungen werden von einem **lokal laufenden** LLM erzeugt — kein Cloud-Abfluss, keine API-Keys. Produktions-Modell ist `qwen2.5:7b`.
+
+```bash
+# Ollama installieren (macOS/Linux):
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Modell pullen (~5 GB Download):
+ollama pull qwen2.5:7b
+
+# Server starten (eigenes Terminal offen lassen):
+ollama serve
+```
+
+**RAM-Bedarf:** ca. 5 GB für die Inferenz von `qwen2.5:7b`. Der Server lauscht standardmäßig auf `http://localhost:11434`.
+
+> Für den optionalen Autoencoder-Vergleich wird zusätzlich TensorFlow benötigt: `uv pip install -e ".[deep]"` (gepinnt auf TF 2.16.2 + tf-keras 2.16.0, siehe `CLAUDE.md`).
+
 ## Erste Schritte (für Claude Code)
 
 ```
