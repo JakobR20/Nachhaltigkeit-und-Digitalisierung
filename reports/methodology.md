@@ -358,3 +358,28 @@ Default: **Union**. Wahl Union vs. Voting hängt vom Dashboard-Workflow ab.
   (Leakage). **Für die finale Auswertung NICHT stillschweigend mitlaufen lassen:** entweder
   **ganz ausschließen** (zu wenig Historie, empfohlen) oder **transparent als Sonderfall**
   ausweisen. Entscheidung gilt einheitlich für alle Methoden (inkl. Autoencoder-Train/Test).
+
+## LLM-Handlungsempfehlung: Prompt-Variantenwahl (Phase 2)
+
+Lokales LLM `qwen2.5:7b` (Ollama, `temperature=0.2`, fester Seed), Output strukturell
+per JSON-Schema-Grammatik erzwungen und anschließend per Pydantic validiert
+(`confidence`-Reskalierung 0–100 → 0–1, String-Truncation). Drei System-Prompt-Varianten
+wurden qualitativ auf 5 bestätigten Test-Anomalien verglichen (je eine pro Methode
+zscore_stl/arima/cluster_segment/autoencoder plus eine Nicht-AE-Quersicht, Auswahl mit
+Seed 42). **Gewählt: V2 (few-shot).** Begründung:
+
+1. **Unterlast-Fall korrekt klassifiziert.** Bei der einzigen milden Anomalie (nr 43,
+   −12 % gegenüber Erwartung) erkennt nur V2 die Minderlast als möglichen Effizienzgewinn
+   statt als Defekt — methodisch wichtig für Anomalie-Plausibilität im Produktivbetrieb.
+2. **Kalibrierte Konfidenz.** V2 liefert `confidence` im Band 0,75–0,85 und differenziert
+   zwischen klar anomalen und ambivalenten Fällen — relevant für die Glaubwürdigkeit der
+   Dashboard-Ausgabe.
+3. **Domänenspezifischer Kontext.** V2 nutzt baumarktspezifische Verbraucher (Kühlung
+   Gartencenter/Getränke, Anlieferung, Kundenfrequenz) statt generischer Formulierungen.
+4. **V1 disqualifiziert.** V1 (minimal) erzeugte bei nr 19 einen defekten Output
+   (abgeschnittene und duplizierte Empfehlungen, 1 von 5 Fällen = 20 % Fehlerrate) und war
+   durchgehend überkonfident (0,92–0,95).
+
+Produktions-Prompt festgeschrieben als `SYSTEM_PROMPT_PRODUCTION` in
+`src/rausch_energy_anomaly/recommendations/prompts.py`. Evidenz (alle 15 Outputs,
+Kontext-Prompts, Laufzeiten): `reports/llm_evaluation/variant_comparison.md`.
