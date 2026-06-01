@@ -1,0 +1,26 @@
+# Dashboard-Konfiguration (Streamlit + Plotly).
+# Single Source of Truth für Methoden-Farben, Branding und Seitenparameter.
+
+branding:
+  title: "RLM-Anomalieerkennung"
+  subtitle: "Demo-Dashboard für Rausch Technology"
+  logo_placeholder: "RAUSCH"   # ersetzt durch echtes Logo, wenn geliefert
+
+# Konsistente Farben für die vier Methoden (Hex), projektweit identisch.
+method_colors:
+  zscore_stl: "#1f77b4"        # blau
+  arima: "#d62728"             # rot
+  cluster_segment: "#2ca02c"   # grün
+  autoencoder: "#9467bd"       # violett
+
+severity_colors:
+  hoch: "#d62728"
+  mittel: "#ff7f0e"
+  niedrig: "#2ca02c"
+
+# Standorte mit eingeschränktem Datenstand (Leakage-Sonderfall, vgl. methodology.md).
+special_sites:
+  Baumarkt_23: "nur 2025-Daten, kein Trainingszeitraum (Leakage-Sonderfall)"
+
+pages:
+  overview_top_n: 10           # Top-N-Anomalien auf der Übersicht
