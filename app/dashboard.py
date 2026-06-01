@@ -38,6 +38,7 @@ from app.data_access import (  # noqa: E402
     sites,
 )
 from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
+from app.styling import header, inject_css, severity_badge  # noqa: E402
 
 sites_list = sites
 
@@ -56,9 +57,9 @@ def page_overview() -> None:
 
     n_sites = len(matrix)
     n_special = len(special)
-    st.subheader("Übersicht")
-    st.caption(f"{n_sites} Standorte ({n_special} mit eingeschränktem Datenstand) · "
-               f"4 Methoden · {len(recs)} annotierte Anomalien")
+    header("Übersicht",
+           f"{n_sites} Standorte ({n_special} mit eingeschränktem Datenstand) · "
+           f"4 Methoden · {len(recs)} annotierte Anomalien")
 
     col_l, col_r = st.columns([3, 2])
 
@@ -120,9 +121,9 @@ def _method_card() -> None:
 
 
 def page_method_comparison() -> None:
-    st.subheader("Methodenvergleich")
-    st.caption("Vier Methoden im Vergleich (Schritt 11): Komplementarität, "
-               "Schwellwert-Sweep, Inferenzkosten.")
+    header("Methodenvergleich",
+           "Vier Methoden im Vergleich (Schritt 11): Komplementarität, "
+           "Schwellwert-Sweep, Inferenzkosten.")
 
     col_l, col_r = st.columns(2)
 
@@ -202,7 +203,7 @@ def page_site_detail() -> None:
     colors = cfg["method_colors"]
     special = cfg.get("special_sites", {})
 
-    st.subheader("Standort-Detail")
+    header("Standort-Detail", "Lastgang, Methoden-Filter und Live-Schwellwerte je Standort.")
     site = st.selectbox("Standort", sites_list())
     if site in special:
         st.warning(f"⚠️ {site}: {special[site]}")
@@ -260,6 +261,7 @@ def page_anomaly_detail() -> None:
     colors = cfg["method_colors"]
     recs = load_recommendations()
 
+    header("Anomalie-Detail", "Lastgang, Score, LLM-Empfehlung und Kontext je Anomalie.")
     labels = [f"nr {r.nr} · {r.site} · {r.method} · {r.timestamp}"
               for r in recs.itertuples()]
     idx = st.selectbox("Anomalie", range(len(labels)), format_func=lambda i: labels[i])
@@ -286,16 +288,22 @@ def page_anomaly_detail() -> None:
 
     with left:
         sev = rec["schweregrad"]
-        st.markdown(f"### :red[●] LLM-Empfehlung — Schweregrad: "
-                    f":{_sev_badge(sev)}[{sev}]  ·  Konfidenz {rec['confidence']:.2f}")
-        st.markdown(f"**Vermutete Ursache:** {rec['vermutete_ursache']}")
-        for i, e in enumerate(rec["handlungsempfehlungen"], 1):
-            st.markdown(f"{i}. {e}")
+        actions = "".join(f"<li>{e}</li>" for e in rec["handlungsempfehlungen"])
+        st.markdown(
+            f'<div class="dash-card llm">'
+            f'<h4>LLM-Empfehlung &nbsp; {severity_badge(sev)} '
+            f'<span style="color:#6b7280;font-size:0.85rem">· Konfidenz '
+            f'{rec["confidence"]:.2f}</span></h4>'
+            f'<b>Vermutete Ursache:</b> {rec["vermutete_ursache"]}'
+            f'<ol style="margin:0.5rem 0 0 1.1rem;padding:0">{actions}</ol>'
+            f'</div>',
+            unsafe_allow_html=True)
         st.caption(f"Modell: {detail.get('llm_model')} · "
                    f"{detail.get('processing_time_s')} s · Versuche: {detail.get('attempts')}")
 
     with right:
-        st.markdown("**Kontext (deterministisch berechnet)**")
+        st.markdown('<div class="dash-card context"><h4>Kontext (deterministisch '
+                    'berechnet)</h4></div>', unsafe_allow_html=True)
         st.table({
             "Feld": ["Aktuelle Last", "Erwartete Last", "Differenz",
                      "Wetter", "Spotpreis", "Geschätzte Mehrkosten"],
@@ -333,10 +341,6 @@ def page_anomaly_detail() -> None:
                        file_name=f"anomalie_{nr}.csv", mime="text/csv")
 
 
-def _sev_badge(sev: str) -> str:
-    return {"hoch": "red", "mittel": "orange", "niedrig": "green"}.get(sev, "gray")
-
-
 PAGES = {
     "Übersicht": page_overview,
     "Methodenvergleich": page_method_comparison,
@@ -346,6 +350,7 @@ PAGES = {
 
 
 def main() -> None:
+    inject_css()
     cfg = load_config()
     b = cfg["branding"]
     st.sidebar.markdown(f"### {b['logo_placeholder']}")

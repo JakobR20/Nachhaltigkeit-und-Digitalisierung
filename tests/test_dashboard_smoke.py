@@ -20,8 +20,9 @@ def test_overview_renders_without_exception():
     # site matrix + top-10 + method-kappa card = 3 dataframes, 1 severity chart
     assert len(at.dataframe) >= 3
     assert len(at.get("plotly_chart")) >= 1
-    caps = " ".join(c.value for c in at.caption)
-    assert "Standorte" in caps
+    # the "Standorte" summary now lives in the styled header markdown block
+    text = " ".join(m.value for m in at.markdown)
+    assert "Standorte" in text
 
 
 def test_all_pages_render_without_exception():

@@ -1,0 +1,7 @@
+# Streamlit theme — kept consistent with config/dashboard.yaml method/severity colors.
+[theme]
+primaryColor = "#d62728"             # Rausch red (matches severity 'hoch' / arima)
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f6f8" # sidebar + cards
+textColor = "#1f2733"
+font = "sans serif"
