@@ -170,6 +170,13 @@ out.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(out, dpi=120)
 plt.show()
 print(f"saved: {out.relative_to(_ROOT)}")
+
+# Persist the sweep values so the dashboard can render them interactively
+# (Plotly) without recomputing compare_at_thresholds (~28 s).
+sweep_csv = _ROOT / "reports" / "tables" / "06_sweep_flag_rates.csv"
+sweep_csv.parent.mkdir(parents=True, exist_ok=True)
+(flag_rates_pivot * 100).reset_index().to_csv(sweep_csv, index=False)
+print(f"saved: {sweep_csv.relative_to(_ROOT)}")
 """
 )
 

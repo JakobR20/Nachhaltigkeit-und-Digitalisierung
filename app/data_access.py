@@ -79,6 +79,13 @@ def load_comparison_markdown() -> str:
 
 
 @st.cache_data
+def load_sweep() -> pd.DataFrame:
+    """X-sweep flag rates (% per method over threshold_pct), precomputed CSV."""
+    path = COMPARISON_MD.parent / "06_sweep_flag_rates.csv"
+    return pd.read_csv(path) if path.exists() else pd.DataFrame()
+
+
+@st.cache_data
 def load_recommendation_detail(nr: str) -> dict[str, Any]:
     """Full per-anomaly JSON (context + prompt + response) for the detail page."""
     import json

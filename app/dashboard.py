@@ -26,7 +26,6 @@ import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from app.data_access import (  # noqa: E402
-    COMPARISON_MD,
     METHODS,
     load_comparison_markdown,
     load_config,
@@ -35,14 +34,13 @@ from app.data_access import (  # noqa: E402
     load_recommendations,
     load_scores_for_site,
     load_site_timeseries,
+    load_sweep,
     sites,
 )
 from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
 from app.styling import header, inject_css, severity_badge  # noqa: E402
 
 sites_list = sites
-
-FIGURES = COMPARISON_MD.parent.parent / "figures"
 
 st.set_page_config(page_title="RLM-Anomalieerkennung", layout="wide")
 
@@ -121,6 +119,7 @@ def _method_card() -> None:
 
 
 def page_method_comparison() -> None:
+    colors = load_config()["method_colors"]
     header("Methodenvergleich",
            "Vier Methoden im Vergleich (Schritt 11): Komplementarität, "
            "Schwellwert-Sweep, Inferenzkosten.")
@@ -159,13 +158,22 @@ def page_method_comparison() -> None:
 
     st.divider()
     st.markdown("**Schwellwert-Sweep (Flag-Rate über Aggregations-Anteil X)**")
-    sweep = FIGURES / "06_sweep_flag_rates.png"
-    if sweep.exists():
-        st.image(str(sweep), width="stretch")
+    sweep = load_sweep()
+    if not sweep.empty:
+        fig3 = go.Figure()
+        for m in METHODS:
+            if m in sweep.columns:
+                fig3.add_scatter(x=sweep["threshold_pct"], y=sweep[m], mode="lines+markers",
+                                 name=m, line=dict(color=colors[m]))
+        fig3.update_layout(height=420, margin=dict(t=10, b=10),
+                           yaxis=dict(title="Flag-Rate Test [%]", type="log"),
+                           xaxis_title="threshold_pct (Anteil flagged points im Segment)",
+                           legend=dict(orientation="h", y=1.08))
+        st.plotly_chart(fig3, width="stretch")
         st.caption("X_default = 0,25 (config.yaml). Gewählt, um ARIMA-Sichtbarkeit "
                    "gegenüber dem Cluster-Anker zu erhalten.")
     else:
-        st.info("Sweep-Figur nicht gefunden (reports/figures/06_sweep_flag_rates.png).")
+        st.info("Sweep-Daten nicht gefunden (reports/tables/06_sweep_flag_rates.csv).")
 
     st.divider()
     st.markdown("**Vergleichstabelle (Schritt 11)**")
@@ -275,13 +283,33 @@ def page_anomaly_detail() -> None:
     ts = pd.Timestamp(row["timestamp"])
     lo, hi = ts - pd.Timedelta(days=3), ts + pd.Timedelta(days=3)
     win = series[(series.index >= lo) & (series.index <= hi)]
+    value_kw = ctx.get("value_kw")
+    expected_kw = ctx.get("expected_kw")
+    diff_kw = ctx.get("diff_kw")
+    diff_pct = ctx.get("diff_pct")
+
     fig = go.Figure()
     fig.add_scatter(x=win.index, y=win.values, mode="lines", name="Last (kW)",
                     line=dict(color="#888", width=1))
-    fig.add_scatter(x=[ts], y=[ctx.get("value_kw")], mode="markers", name="Anomalie",
-                    marker=dict(color=colors.get(row["method"], "#d62728"), size=14, symbol="x"))
+    if expected_kw is not None:
+        # horizontal expected-value band: a typical comparison day at this time
+        fig.add_scatter(x=[win.index.min(), win.index.max()],
+                        y=[expected_kw, expected_kw], mode="lines",
+                        name="Erwartung (Median Vergleichstage)",
+                        line=dict(color="#2ca02c", width=1.5, dash="dash"))
+    fig.add_scatter(x=[ts], y=[value_kw], mode="markers", name="Anomalie",
+                    marker=dict(color=colors.get(row["method"], "#d62728"),
+                                size=14, symbol="x"))
+    # direction annotation at the marker (Über-/Unterlast + magnitude)
+    if diff_kw is not None:
+        richtung = "Überlast" if diff_kw > 0 else "Unterlast"
+        pct_txt = f" ({diff_pct:+.0f} %)" if diff_pct is not None else ""
+        fig.add_annotation(x=ts, y=value_kw, text=f"{richtung}: {diff_kw:+.1f} kW{pct_txt}",
+                           showarrow=True, arrowhead=2, ax=0, ay=-40,
+                           font=dict(size=11, color="#333"),
+                           bgcolor="rgba(255,255,255,0.8)")
     fig.update_layout(height=360, margin=dict(t=10, b=10), yaxis_title="kW",
-                      legend=dict(orientation="h", y=1.05))
+                      legend=dict(orientation="h", y=1.08))
     st.plotly_chart(fig, width="stretch")
 
     left, right = st.columns(2)
