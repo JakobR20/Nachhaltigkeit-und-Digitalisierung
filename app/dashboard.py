@@ -1,10 +1,11 @@
-"""RLM anomaly-detection dashboard (Streamlit + Plotly).
+"""Energy anomaly dashboard (Streamlit + Plotly), THWS.
 
-Demo artefact for Rausch Technology. Four pages:
-  1. Übersicht        — site list, severity histogram, top-10, method card
-  2. Methodenvergleich — kappa heatmap, X-sweep, inference table, comparison
-  3. Standort-Detail   — load curve, method filters, hyperparameter sliders
-  4. Anomalie-Detail   — per-anomaly plot, scores, LLM recommendation, context
+Cost-first browser for energy managers (Apple-HIG):
+  - anomaly list  — cost-prioritised cards (app/cost_first.py)
+  - anomaly detail — load plot, transparent cost calc, AI analysis, conditions
+
+A research tab (⚙) nests the legacy 4 pages (overview, method comparison,
+site detail, anomaly detail) for methodological depth.
 
 Run: streamlit run app/dashboard.py
 """
@@ -25,6 +26,8 @@ import plotly.express as px  # noqa: E402
 import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
 
+from app.cost_first import page_anomaly_detail as cost_detail  # noqa: E402
+from app.cost_first import page_anomaly_list as cost_list  # noqa: E402
 from app.data_access import (  # noqa: E402
     METHODS,
     annotated_index,
@@ -39,11 +42,11 @@ from app.data_access import (  # noqa: E402
     sites,
 )
 from app.method_meta import comparison_table, inference_times, kappa_matrix  # noqa: E402
-from app.styling import header, inject_css, severity_badge  # noqa: E402
+from app.styling import header, inject_css, inject_legacy_css, severity_badge  # noqa: E402
 
 sites_list = sites
 
-st.set_page_config(page_title="RLM-Anomalieerkennung", layout="wide")
+st.set_page_config(page_title="THWS — Energie-Anomalien", layout="wide")
 
 
 def page_overview() -> None:
@@ -341,7 +344,7 @@ def _render_top5(
                 unsafe_allow_html=True)
             if nr and st.button("Details", key=f"to_{nr}", width="stretch"):
                 st.session_state["goto_nr"] = nr
-                st.session_state["_nav_to"] = "Anomalie-Detail"
+                st.session_state["_research_to"] = "Anomalie-Detail"
                 st.rerun()
 
 
@@ -458,7 +461,7 @@ def page_anomaly_detail() -> None:
                        file_name=f"anomalie_{nr}.csv", mime="text/csv")
 
 
-PAGES = {
+RESEARCH_PAGES = {
     "Übersicht": page_overview,
     "Methodenvergleich": page_method_comparison,
     "Standort-Detail": page_site_detail,
@@ -466,21 +469,37 @@ PAGES = {
 }
 
 
+def _research_view() -> None:
+    """The legacy 4-page dashboard, now nested under the research tab."""
+    inject_legacy_css()
+    st.sidebar.markdown("### Forschungs-Ansicht")
+    st.sidebar.caption("Technische Tiefe — Methoden, Scores, Schwellwerte")
+    if st.sidebar.button("‹ Zurück zur Kostenübersicht"):
+        st.session_state["_nav_to"] = "list"
+        st.rerun()
+    if "research_page" not in st.session_state:
+        st.session_state["research_page"] = "Übersicht"
+    sub = st.session_state.pop("_research_to", None)
+    if sub is not None:
+        st.session_state["research_page"] = sub
+    choice = st.sidebar.radio("Seite", list(RESEARCH_PAGES.keys()), key="research_page")
+    RESEARCH_PAGES[choice]()
+
+
 def main() -> None:
     inject_css()
-    cfg = load_config()
-    b = cfg["branding"]
-    st.sidebar.markdown(f"### {b['logo_placeholder']}")
-    st.sidebar.title(b["title"])
-    st.sidebar.caption(b["subtitle"])
-    # a deep-link from the site-detail cards sets _nav_to before the radio renders
-    if "page" not in st.session_state:
-        st.session_state["page"] = "Übersicht"
-    nav_to = st.session_state.pop("_nav_to", None)
-    if nav_to is not None:
-        st.session_state["page"] = nav_to
-    choice = st.sidebar.radio("Seite", list(PAGES.keys()), key="page")
-    PAGES[choice]()
+    # top-level view: cost-first list/detail (default) or the research tab
+    nav = st.session_state.pop("_nav_to", None)
+    if nav is not None:
+        st.session_state["view"] = nav
+    view = st.session_state.setdefault("view", "list")
+
+    if view == "research":
+        _research_view()
+    elif view == "detail":
+        cost_detail()
+    else:
+        cost_list()
 
 
 if __name__ == "__main__":

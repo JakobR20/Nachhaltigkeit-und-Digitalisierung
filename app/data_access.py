@@ -104,6 +104,36 @@ def annotated_index() -> dict[tuple[str, str], dict[str, str]]:
 
 
 @st.cache_data
+def load_cost_table() -> pd.DataFrame:
+    """One row per annotated anomaly with cost + context fields, from the 66 JSONs.
+
+    This is the data source for the cost-first anomaly list/detail pages. Sorted by
+    estimated extra cost descending (None costs last).
+    """
+    import json
+
+    detail_dir = ROOT / "reports" / "llm_recommendations"
+    rows = []
+    for path in sorted(detail_dir.glob("*.json")):
+        d = json.loads(path.read_text(encoding="utf-8"))
+        c, r, a = d["context"], d["recommendation"], d["annotation"]
+        rows.append({
+            "nr": d["nr"], "site": c["site"], "timestamp": c["timestamp"],
+            "method": c["method"], "segment": c["segment"],
+            "mehrkosten_eur": c["mehrkosten_eur"], "diff_kw": c["diff_kw"],
+            "diff_pct": c["diff_pct"], "value_kw": c["value_kw"],
+            "expected_kw": c["expected_kw"], "dauer_h": c["dauer_h"],
+            "spotpreis_ct": c["spotpreis_ct_pro_kwh"],
+            "temperatur_c": c["temperatur_c"], "wetter": c["wetter_beschreibung"],
+            "schweregrad": r["schweregrad"], "confidence": r["confidence"],
+            "vermutete_ursache": r["vermutete_ursache"],
+            "feiertag": a["feiertag"], "wochentag": a["wochentag"],
+        })
+    df = pd.DataFrame(rows)
+    return df.sort_values("mehrkosten_eur", ascending=False, na_position="last")
+
+
+@st.cache_data
 def load_recommendation_detail(nr: str) -> dict[str, Any]:
     """Full per-anomaly JSON (context + prompt + response) for the detail page."""
     import json

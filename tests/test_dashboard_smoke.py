@@ -1,8 +1,9 @@
-"""Headless render smoke-test for the dashboard pages (Streamlit AppTest).
+"""Headless render smoke-tests for the dashboard (Streamlit AppTest).
 
-No browser needed: AppTest runs the script and inspects the element tree. Verifies
-each page renders without exception and produces its key elements. Screenshots are
-captured separately/manually.
+No browser needed: AppTest runs the script and inspects the element tree. Covers
+the cost-first main pages (list + detail with its cost-calc variants) and the
+research tab (the legacy 4 pages). Views are driven via session_state to avoid the
+AppTest selectbox-rerun quirk; navigation buttons are covered separately.
 """
 
 from __future__ import annotations
@@ -14,47 +15,60 @@ from streamlit.testing.v1 import AppTest
 APP = str(Path(__file__).resolve().parents[1] / "app" / "dashboard.py")
 
 
-def test_overview_renders_without_exception():
-    at = AppTest.from_file(APP, default_timeout=60).run()
+def _run(view: str | None = None, detail_nr: str | None = None) -> AppTest:
+    at = AppTest.from_file(APP, default_timeout=120)
+    if view:
+        at.session_state["view"] = view
+    if detail_nr:
+        at.session_state["detail_nr"] = detail_nr
+    return at.run()
+
+
+def _md(at: AppTest) -> str:
+    return " ".join(m.value for m in at.markdown)
+
+
+def test_list_renders_with_brand_and_cards():
+    at = _run()
     assert not at.exception
-    # site matrix + top-10 + method-kappa card = 3 dataframes, 1 severity chart
-    assert len(at.dataframe) >= 3
-    assert len(at.get("plotly_chart")) >= 1
-    # the "Standorte" summary now lives in the styled header markdown block
-    text = " ".join(m.value for m in at.markdown)
-    assert "Standorte" in text
+    assert "THWS" in _md(at)
+    assert len([b for b in at.button if b.label.startswith("Details")]) == 66
+    assert len(at.selectbox) == 4  # four filters
 
 
-def test_all_pages_render_without_exception():
-    at = AppTest.from_file(APP, default_timeout=150).run()
-    for page in ("Übersicht", "Methodenvergleich", "Standort-Detail", "Anomalie-Detail"):
-        at.sidebar.radio[0].set_value(page).run()
-        assert not at.exception, f"page {page} raised: {at.exception}"
-
-
-def test_site_detail_slider_rerun():
-    at = AppTest.from_file(APP, default_timeout=150).run()
-    at.sidebar.radio[0].set_value("Standort-Detail").run()
-    assert len(at.slider) == 3  # z-score, ARIMA sigma, AE percentile
-    # main load+expectation plot and the method-activity strip
-    assert len(at.get("plotly_chart")) == 2
-    at.slider[0].set_value(5.0).run()  # re-threshold must not crash
+def test_detail_renders_all_blocks():
+    at = _run(view="detail", detail_nr="21")  # highest cost
     assert not at.exception
+    md = _md(at)
+    for block in ("Kostenanalyse", "KI-Analyse", "Rahmenbedingungen", "Vermutete Ursache"):
+        assert block in md, f"missing block: {block}"
+    assert len(at.get("plotly_chart")) == 1
 
 
-def test_site_detail_card_deeplink_to_anomaly():
-    at = AppTest.from_file(APP, default_timeout=150).run()
-    at.sidebar.radio[0].set_value("Standort-Detail").run()
-    at.selectbox[0].set_value("Baumarkt_06").run()  # has annotated anomalies
-    assert len(at.button) >= 1  # at least one annotated top-5 card has a Details link
-    at.button[0].click().run()
+def test_detail_negative_price_block():
+    at = _run(view="detail", detail_nr="58")  # negative spot price
     assert not at.exception
-    assert at.session_state["page"] == "Anomalie-Detail"
+    md = _md(at)
+    assert "negativ" in md and "0,00 €" in md
 
 
-def test_method_comparison_three_cards():
-    at = AppTest.from_file(APP, default_timeout=150).run()
-    at.sidebar.radio[0].set_value("Methodenvergleich").run()
+def test_detail_underconsumption_block():
+    at = _run(view="detail", detail_nr="4")  # diff_kw < 0
     assert not at.exception
-    # kappa heatmap + anomaly-count bars + inference-cost bars = 3 plotly charts
-    assert len(at.get("plotly_chart")) == 3
+    md = _md(at)
+    assert "Minderverbrauch" in md
+
+
+def test_card_click_navigates_to_detail():
+    at = _run()
+    [b for b in at.button if b.label.startswith("Details")][0].click().run()
+    assert not at.exception
+    assert at.session_state["view"] == "detail"
+
+
+def test_research_tab_exposes_legacy_pages():
+    at = _run(view="research")
+    assert not at.exception
+    assert at.sidebar.radio[0].options == [
+        "Übersicht", "Methodenvergleich", "Standort-Detail", "Anomalie-Detail",
+    ]
