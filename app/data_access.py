@@ -96,10 +96,11 @@ def expected_profile(site: str) -> pd.Series:
 
 
 @st.cache_data
-def annotated_index() -> dict[tuple[str, str], str]:
-    """{(site, timestamp_str): nr} for the 66 annotated anomalies (LLM detail exists)."""
+def annotated_index() -> dict[tuple[str, str], dict[str, str]]:
+    """{(site, timestamp_str): {nr, schweregrad}} for the 66 annotated anomalies."""
     recs = load_recommendations()
-    return {(r.site, str(r.timestamp)): r.nr for r in recs.itertuples()}
+    return {(r.site, str(r.timestamp)): {"nr": r.nr, "schweregrad": r.schweregrad}
+            for r in recs.itertuples()}
 
 
 @st.cache_data

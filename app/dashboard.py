@@ -322,18 +322,22 @@ def _render_top5(
         expected = profile.get((ts.dayofweek, ts.time()))
         diff = value - expected if (value is not None and expected is not None) else None
         pct = (100 * diff / expected) if (diff is not None and expected) else None
-        nr = annotated.get((site, str(ts)))
+        meta = annotated.get((site, str(ts)))
+        nr = meta["nr"] if meta else None
         with col:
-            badge = "✓ annotiert" if nr else "—"
-            border = "#2ca02c" if nr else "#d1d5db"
+            border = "#2ca02c" if meta else "#d1d5db"
             diff_txt = (f"{diff:+.1f} kW ({pct:+.0f} %)" if diff is not None
                         else f"score {score:+.1f}")
+            # severity badge only when annotated, otherwise a dim "—"
+            status = (f'{severity_badge(meta["schweregrad"])} '
+                      '<span style="color:#2ca02c;font-size:0.78rem">✓ annotiert</span>'
+                      if meta else '<span style="color:#9ca3af">—</span>')
             st.markdown(
                 f'<div style="border:1px solid {border};border-left:4px solid '
                 f'{colors[method]};border-radius:8px;padding:0.6rem;font-size:0.85rem">'
                 f'<b>{pd.Timestamp(ts).strftime("%d.%m.%Y %H:%M")}</b><br>'
                 f'<span style="color:{colors[method]}">{method}</span><br>'
-                f'{diff_txt}<br><span style="color:#6b7280">{badge}</span></div>',
+                f'{diff_txt}<br>{status}</div>',
                 unsafe_allow_html=True)
             if nr and st.button("Details", key=f"to_{nr}", width="stretch"):
                 st.session_state["goto_nr"] = nr
