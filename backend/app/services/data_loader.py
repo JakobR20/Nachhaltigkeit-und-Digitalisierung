@@ -117,11 +117,18 @@ def list_anomalies(
     return items
 
 
+FEATURES = ROOT / "data" / "processed" / "features.parquet"
+
+
 @functools.lru_cache(maxsize=1)
 def _load_series() -> pd.Series:
-    from rausch_energy_anomaly.recommendations.context import _category_values
+    """Hourly load curve from features.parquet (0.05 s) instead of load_category.
 
-    return _category_values("Baumärkte")
+    load_category parses every site Excel (~45 s cold) — far too slow for a request.
+    The hourly resolution is plenty for the ±3-day detail plot; the anomaly marker's
+    exact value comes from the recommendation JSON, not from this series.
+    """
+    return pd.read_parquet(FEATURES, columns=["value_kw"])["value_kw"]
 
 
 def _load_curve(site: str, ts: pd.Timestamp) -> list[LoadPoint]:
