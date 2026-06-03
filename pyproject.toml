@@ -42,6 +42,8 @@ dev = [
     "mypy>=1.10",           # --strict
     "pytest>=8.0",
     "pytest-cov>=5.0",      # Coverage > 70 %
+    "python-docx>=1.2",     # Paper-Generierung (paper/_build_paper.py)
+    "python-pptx>=1.0",     # Poster-Generierung (paper/_build_poster.py)
 ]
 dashboard = [
     "streamlit>=1.33",
