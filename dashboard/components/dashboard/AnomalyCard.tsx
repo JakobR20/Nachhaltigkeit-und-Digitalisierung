@@ -31,10 +31,19 @@ export function AnomalyCard({ a }: { a: AnomalyListItem }) {
       ? `${METHOD_LABELS[a.method] ?? a.method} · auch erkannt von ${a.also_flagged_by.map((m) => METHOD_LABELS[m] ?? m).join(", ")}`
       : METHOD_LABELS[a.method] ?? a.method;
 
+  const open = () => router.push(`/anomaly/${a.nr}`);
   return (
     <Card
-      onClick={() => router.push(`/anomaly/${a.nr}`)}
-      className="mb-4 cursor-pointer rounded-xl bg-hig-card p-5 shadow-sm transition-shadow hover:shadow-md"
+      role="link"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      }}
+      className="mb-4 cursor-pointer rounded-xl bg-hig-card p-5 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-hig-accent"
     >
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-3">

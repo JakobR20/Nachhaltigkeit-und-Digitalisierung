@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard — THWS Energie-Anomalien
 
-## Getting Started
+Next.js 15 (App Router) cost-first browser for the energy manager, styled to the
+Apple Human Interface Guidelines. Talks to the FastAPI backend (`../backend`).
 
-First, run the development server:
+## Setup
+
+```bash
+npm install
+```
+
+## Run (dev)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Opens `http://localhost:3000`. **The backend must run on port 8000** — start it first:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# from the repo root
+uvicorn app.main:app --reload --app-dir backend
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Otherwise the list shows a friendly "Backend nicht erreichbar" message.
 
-## Learn More
+## Pages
 
-To learn more about Next.js, take a look at the following resources:
+- `/` — cost-prioritised anomaly list with ensemble overview + filters
+- `/anomaly/[id]` — detail: load chart, transparent cost breakdown, AI analysis
+- `/research` — method-comparison view (κ heatmap, inference cost, sweep, table)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command | Purpose |
+|---|---|
+| `npm run dev` | dev server (Turbopack) |
+| `npm run build` | production build |
+| `npm run start` | serve the production build |
+| `npm run lint` | ESLint |
+| `npm run test` | Vitest (component + util tests) |
 
-## Deploy on Vercel
+## Configuration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- API base URL: `NEXT_PUBLIC_API_URL` (defaults to `http://localhost:8000`)
+- Apple-HIG tokens live in `app/globals.css`; method/severity colours in `lib/format.ts`
+- Types mirror the backend Pydantic schemas in `types/anomaly.ts`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack
+
+Next.js 15 · React 19 · TypeScript · Tailwind v4 · shadcn/ui · Recharts ·
+@tanstack/react-query · axios · Vitest + React Testing Library

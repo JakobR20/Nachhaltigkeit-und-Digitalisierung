@@ -74,19 +74,32 @@ ollama serve
 
 > Für den optionalen Autoencoder-Vergleich wird zusätzlich TensorFlow benötigt: `uv pip install -e ".[deep]"` (gepinnt auf TF 2.16.2 + tf-keras 2.16.0, siehe `CLAUDE.md`).
 
-### 6. Dashboard starten
+### 6. Dashboard starten (React + FastAPI)
 
-Das Streamlit-Dashboard (Demo-Artefakt für Rausch) zeigt die Anomalien interaktiv über vier Seiten: **Übersicht**, **Methodenvergleich**, **Standort-Detail** (mit Hyperparameter-Slidern) und **Anomalie-Detail** (mit LLM-Empfehlung).
+Das Dashboard ist ein **Cost-First-Browser** (Next.js, Apple-HIG) mit einem
+**FastAPI-Backend**, das die vorberechneten Ergebnisse ausliefert. Zwei Prozesse,
+zwei Terminals:
 
 ```bash
-streamlit run app/dashboard.py
+# Terminal 1 — Backend (Port 8000):
+uvicorn app.main:app --reload --app-dir backend
+
+# Terminal 2 — Dashboard (Port 3000):
+cd dashboard && npm install && npm run dev
 ```
 
-Öffnet automatisch `http://localhost:8501`.
+Dann `http://localhost:3000`. Das Backend muss laufen, sonst zeigt die Liste
+„Backend nicht erreichbar".
 
-- **Voraussetzungen:** `uv sync` installiert alles Nötige (Streamlit + Plotly sind enthalten). Keine API-Keys, kein Ollama nötig — das Dashboard liest vorberechnete Ergebnisse.
-- **Datenstand:** Das Dashboard liest aus `data/processed/*.parquet` (Anomalie-Scores, Features) und `reports/llm_recommendations*`. Liegen diese Dateien nicht lokal vor, zeigt das Dashboard leere Tabellen — zuerst die Pipeline-Schritte laufen lassen, die die Parquets erzeugen.
-- **Methoden-Farben & Branding** werden zentral in `config/dashboard.yaml` gepflegt; das Theme liegt in `.streamlit/config.toml`.
+- **Seiten:** Kostenpriorisierte Anomalie-Liste · Anomalie-Detail (Lastgang,
+  transparenter Kosten-Rechenweg, KI-Analyse) · Forschungs-Ansicht (⚙;
+  κ-Heatmap, Inferenzkosten, Sweep, Vergleichstabelle).
+- **Datenstand:** liest `reports/llm_recommendations*`, `data/processed/*.parquet`
+  und `reports/tables/06_*`. Liegen diese nicht vor, zuerst die Pipeline laufen
+  lassen. Kein Ollama/API-Key nötig (vorberechnete Ergebnisse).
+- Setup-Details: `backend/README.md` und `dashboard/README.md`.
+
+> Das frühere Streamlit-Dashboard liegt auf dem Branch `streamlit-legacy`.
 
 ## Erste Schritte (für Claude Code)
 
