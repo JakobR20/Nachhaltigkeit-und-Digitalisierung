@@ -42,35 +42,40 @@ export function FilterBar({ sites }: { sites: string[] }) {
   }
 
   return (
-    <div className="mb-4 flex flex-wrap gap-2">
-      <Select
-        value={params.get("site") ?? "all"}
-        onValueChange={(v: string | null) => update("site", v ?? "all")}
-      >
-        <SelectTrigger className="w-[180px] bg-hig-card">
-          <SelectValue placeholder="Standort" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Alle Standorte</SelectItem>
-          {sites.map((s) => (
-            <SelectItem key={s} value={s}>
-              {s}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="mb-4 flex flex-wrap gap-3">
+      <FilterField label="Standort">
+        <Select
+          value={params.get("site") ?? "all"}
+          onValueChange={(v: string | null) => update("site", v ?? "all")}
+        >
+          <SelectTrigger className="w-[180px] bg-hig-card">
+            <SelectValue placeholder="Standort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle Standorte</SelectItem>
+            {sites.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterField>
 
       <FilterSelect
+        label="Zeitraum"
         value={params.get("period") ?? "all"}
         options={PERIODS}
         onChange={(v) => update("period", v)}
       />
       <FilterSelect
+        label="Mindestkosten"
         value={params.get("min_cost") ?? "0"}
         options={MIN_COSTS}
         onChange={(v) => update("min_cost", v)}
       />
       <FilterSelect
+        label="Sortierung"
         value={params.get("sort") ?? "cost"}
         options={SORTS}
         onChange={(v) => update("sort", v)}
@@ -79,30 +84,51 @@ export function FilterBar({ sites }: { sites: string[] }) {
   );
 }
 
+function FilterField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="px-1 text-[12px] font-medium text-hig-secondary">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function FilterSelect({
+  label,
   value,
   options,
   onChange,
 }: {
+  label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }) {
   return (
-    <Select
-      value={value}
-      onValueChange={(v: string | null) => onChange(v ?? options[0].value)}
-    >
-      <SelectTrigger className="w-[180px] bg-hig-card">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <FilterField label={label}>
+      <Select
+        value={value}
+        onValueChange={(v: string | null) => onChange(v ?? options[0].value)}
+      >
+        <SelectTrigger className="w-[180px] bg-hig-card">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </FilterField>
   );
 }
