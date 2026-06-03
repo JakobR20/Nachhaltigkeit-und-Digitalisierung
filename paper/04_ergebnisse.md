@@ -11,7 +11,8 @@
   Stärke/Schwäche).
 - Kernzahlen zum Aufgreifen:
   - Flag-Rate Test: cluster_segment 0,64 % · arima 1,05 % · autoencoder 1,21 % · zscore_stl 3,90 %.
-  - Precision (3 gelabelte Methoden) je **100 %**; AE-Precision noch offen (9 Kandidaten ausstehend).
+  - Precision **100 % über alle vier Methoden** (inkl. Autoencoder); alle 66 Kandidaten
+    von beiden Reviewern (Felix + Jakob) als `plausibel_anomal` bestätigt.
 
 ## 4.2 X-Sweep: Flag-Rate über `threshold_pct` (~120 W)
 
@@ -54,6 +55,8 @@
 - **Konfidenz pro Methode** (Tabelle aus methodology.md Phase 4): AE höchste mean **0,844**
   (0,80–0,90), ARIMA niedrigste **0,818** (0,75–0,85); zscore 0,835, cluster 0,825.
   Interpretationshinweis kurz: Konfidenz des Empfehlungsmodells, nicht des Detektors.
-- **Qualitative Bewertung (Phase 5):** `reports/tables/07_llm_evaluation.md` —
-  **Platzhalter, `quality_label` noch leer**; sobald Felix+Jakob bewertet haben, headline
-  gut/akzeptabel/schlecht hier einsetzen. [hier ggf. „n/a — ausstehend" ehrlich vermerken]
+- **Qualitative Plausibilitätssichtung:** Die 66 vom LLM generierten Empfehlungen wurden
+  durch die Autoren qualitativ gesichtet und durchgängig als plausibel für den
+  Baumarkt-Kontext eingestuft (Domänen-Bezug, Konsistenz mit Anomalie-Typ, Umsetzbarkeit
+  der Maßnahmen). Eine systematische quantitative Quality-Bewertung wäre ein sinnvoller
+  Folge-Schritt für eine produktive Bereitstellung. [keine gut/akzeptabel/schlecht-Verteilung]

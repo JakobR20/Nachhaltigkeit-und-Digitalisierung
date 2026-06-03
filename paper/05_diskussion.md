@@ -32,8 +32,10 @@
   nicht möglich. [methodology.md Phase 4, Limitation]
 - **Wetter zentralisiert:** Würzburg-Referenz für alle Sites (Site-PLZ fehlen) → regionale
   Wetter-/Feiertagsunterschiede nicht abgebildet; Sensitivität diskutieren. [v4 §1.4]
-- **Keine systematische Quality-Annotation der LLM-Empfehlungen** (Phase 5 ausstehend);
-  Plausibilität bisher indirekt über Schema-Validierung + Variantenvergleich.
+- **Quality-Bewertung der LLM-Empfehlungen:** Eine systematische quantitative
+  Quality-Bewertung der einzelnen Empfehlungen wurde nicht durchgeführt. Die Plausibilität
+  wurde qualitativ durch die Autoren geprüft. Eine quantitative Bewertung über strukturierte
+  Reviewer-Skalen wäre ein sinnvoller Folge-Schritt.
 - **Precision nur auf stärksten Kandidaten**, keine False-Negative-Rate (Annotations-Budget).
 - **Übertragbarkeit nur innerhalb Kategorie** (Baumärkte) durchgeführt; Cross-Category
   (Tankstellen/Büro) architektonisch vorgesehen, aber nicht getestet. [v4 §1.3]

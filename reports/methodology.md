@@ -291,14 +291,14 @@ bestätigt**, keine `erklärbar`- oder `unklar`-Markierung. Empirische
 Precision: arima 17/17, cluster_segment 20/20, zscore_stl 20/20 — alle
 **100 %**.
 
-**Stand 31.05.2026 (AE nachgezogen):** Nach AE-Recovery wurden **9
-zusätzliche AE-only-Kandidaten** an die Annotation angehängt (`nr 58..66`;
-11 weitere AE-Top-Treffer fielen als `(site, timestamp)`-Duplikate auf die
-höher-priorisierten Methoden und sind dort als `also_flagged_by` markiert).
-Reviewer-Sichtung dieser 9 ist ausstehend; bis dahin steht AE-Precision auf
-`NaN`. Erwartung (per κ-Befund und AE-Charakteristik): AE liefert in seinen
-Top-Kandidaten ebenfalls plausible Form-/Niveau-Anomalien, Precision wird in
-derselben Größenordnung wie die anderen drei Methoden liegen.
+**Stand 01.06.2026 (AE vollständig gelabelt, Commit 17a0516):** Nach AE-Recovery
+wurden **9 zusätzliche AE-only-Kandidaten** an die Annotation angehängt
+(`nr 58..66`; 11 weitere AE-Top-Treffer fielen als `(site, timestamp)`-Duplikate
+auf die höher-priorisierten Methoden und sind dort als `also_flagged_by`
+markiert). Diese 9 sind inzwischen von beiden Reviewern gesichtet und **alle als
+`plausibel_anomal` bestätigt** — die Annotation umfasst damit alle 66 Kandidaten
+vollständig. **AE-Precision = 9/9 = 100 %**, in derselben Größenordnung wie die
+anderen drei Methoden (arima 17/17, cluster_segment 20/20, zscore_stl 20/20).
 
 **Methodische Konsequenz** (unverändert mit AE): Die Plausibilitäts-
 Validierung trennt die Methoden auf dieser Stichprobe nicht — sie zeigt, dass
@@ -319,9 +319,12 @@ mehrere Methoden beide → **Ensemble (Union)**: die gemeinsam niedrige κ
 beweist disjunkte Anomalie-Mengen; ein Ensemble summiert komplementäres statt
 redundantes Wissen.
 
-**Aktueller Stand (3 Methoden gelabelt, AE ausstehend):** drei Qualifier
-(arima, cluster_segment, zscore_stl, alle Precision = 100 % UND max κ = 0,11
-≤ 0,40); `recommend_strategy` liefert bereits:
+**Aktueller Stand (alle vier Methoden gelabelt):** vier Qualifier
+(arima, cluster_segment, zscore_stl, autoencoder; alle Precision = 100 % UND
+max κ = 0,11 ≤ 0,40). Der unten zitierte `recommend_strategy`-Output stammt aus
+dem Lauf **vor** dem AE-Labeling (drei qualifizierende Methoden); mit der nun
+vollständigen Annotation qualifiziert AE als vierte Methode, die Empfehlung
+(Ensemble/Union) bleibt unverändert:
 
 ```
 strategy = ensemble
@@ -333,11 +336,10 @@ rationale = 3 Methoden erfüllen das Sieger-Kriterium
            für das Dashboard.
 ```
 
-**Erwartete finale Lage** (nach AE-Labeling): bei κ(AE, andere) ≤ 0,11 und
-plausibler AE-Precision wird AE als **vierte qualifizierende Methode**
-dazustoßen. Empfehlung bleibt **Ensemble (Union)**, jetzt über vier statt
-drei Methoden — das Dashboard kombiniert vier weitgehend disjunkte
-Signal-Familien.
+**Finale Lage (bestätigt nach AE-Labeling):** κ(AE, andere) ≤ 0,11 und
+AE-Precision 100 % — AE qualifiziert als **vierte Methode**. Empfehlung bleibt
+**Ensemble (Union)**, jetzt über vier statt drei Methoden — das Dashboard
+kombiniert vier weitgehend disjunkte Signal-Familien.
 
 - **Union** (sensitiv): Flag, wenn ≥ 1 Methode flaggt — niedrige
   False-Negative-Rate; Default-Wahl für ein Dashboard, das je Flag einen

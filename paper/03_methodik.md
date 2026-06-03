@@ -85,6 +85,9 @@
   Zahlen. [methodology.md „Kontext-Builder (Phase 3)"; Samples `reports/llm_evaluation/full_context_samples.md`]
 - **Produktionslauf (Phase 4):** über alle 66 `plausibel_anomal`-Anomalien; Output
   `reports/llm_recommendations.csv` + `{001..066}.json`. [Statistik in Kap. 4]
+- **Qualitätssicherung:** Die generierten Empfehlungen wurden qualitativ auf Plausibilität
+  geprüft (Domänen-Bezug, Konsistenz mit Anomalie-Typ, Umsetzbarkeit der Maßnahmen); keine
+  systematische quantitative Quality-Skala. [Befund in Kap. 4.6, Limitation Kap. 5.3]
 
 ## 3.6 Bewertungsmetriken (~80 W)
 
