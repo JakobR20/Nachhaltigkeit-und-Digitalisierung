@@ -20,9 +20,12 @@ from app.models.schemas import (
     AnomalyListItem,
     Conditions,
     EnsembleStats,
+    InferenceCost,
     LoadPoint,
+    MethodComparison,
     MethodStat,
     SiteItem,
+    SweepPoint,
 )
 from app.services.cost_calculator import (
     annual_projection,
@@ -197,3 +200,52 @@ def list_sites() -> list[SiteItem]:
     counts = s[s["flag"] == True].groupby("site").size()  # noqa: E712
     return [SiteItem(site=site, anomaly_count=int(n), is_special=site in SPECIAL_SITES)
             for site, n in counts.items()]
+
+
+SWEEP_CSV = ROOT / "reports" / "tables" / "06_sweep_flag_rates.csv"
+
+
+def _inference_costs() -> list[InferenceCost]:
+    """Parse Wall-Time fit/score per method from the comparison table."""
+    out: list[InferenceCost] = []
+    if not COMPARISON_MD.exists():
+        return out
+    header: list[str] | None = None
+    for line in COMPARISON_MD.read_text(encoding="utf-8").splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if header is None:
+            if cells and cells[0] == "Methode":
+                header = cells
+            continue
+        if set("".join(cells)) <= {"-", " "} or cells[0] not in METHOD_META:
+            continue
+        row = dict(zip(header, cells, strict=False))
+        try:
+            out.append(InferenceCost(
+                method=cells[0],
+                fit_s=float(row["Wall-Time fit (s)"]),
+                score_s=float(row["Wall-Time score (s)"]),
+            ))
+        except (KeyError, ValueError):
+            continue
+    return out
+
+
+def _sweep() -> list[SweepPoint]:
+    if not SWEEP_CSV.exists():
+        return []
+    df = pd.read_csv(SWEEP_CSV)
+    return [SweepPoint(**{k: float(v) for k, v in row.items()})
+            for row in df.to_dict(orient="records")]
+
+
+def method_comparison() -> MethodComparison:
+    table = COMPARISON_MD.read_text(encoding="utf-8") if COMPARISON_MD.exists() else ""
+    return MethodComparison(
+        kappa=_kappa(),
+        sweep=_sweep(),
+        inference=_inference_costs(),
+        table_markdown=table,
+    )

@@ -5,6 +5,7 @@ import type {
   AnomalyFilters,
   AnomalyListItem,
   EnsembleStats,
+  MethodComparison,
   SiteItem,
 } from "@/types/anomaly";
 
@@ -34,5 +35,10 @@ export async function fetchEnsembleStats(): Promise<EnsembleStats> {
 
 export async function fetchSites(): Promise<SiteItem[]> {
   const { data } = await api.get<SiteItem[]>("/api/sites");
+  return data;
+}
+
+export async function fetchMethodComparison(): Promise<MethodComparison> {
+  const { data } = await api.get<MethodComparison>("/api/method-comparison");
   return data;
 }

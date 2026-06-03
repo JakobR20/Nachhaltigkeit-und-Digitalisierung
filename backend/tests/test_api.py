@@ -74,6 +74,15 @@ def test_unknown_nr_404():
     assert client.get("/api/anomalies/9999").status_code == 404
 
 
+def test_method_comparison():
+    r = client.get("/api/method-comparison")
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["sweep"]) >= 4
+    assert len(d["inference"]) == 4
+    assert d["kappa"] and d["table_markdown"]
+
+
 @pytest.mark.parametrize("sort_by", ["cost", "date", "severity"])
 def test_sort_modes(sort_by):
     r = client.get("/api/anomalies", params={"sort_by": sort_by})

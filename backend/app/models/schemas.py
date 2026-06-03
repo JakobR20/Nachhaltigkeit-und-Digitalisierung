@@ -87,3 +87,24 @@ class SiteItem(BaseModel):
     site: str
     anomaly_count: int
     is_special: bool
+
+
+class SweepPoint(BaseModel):
+    threshold_pct: float
+    arima: float | None = None
+    autoencoder: float | None = None
+    cluster_segment: float | None = None
+    zscore_stl: float | None = None
+
+
+class InferenceCost(BaseModel):
+    method: str
+    fit_s: float
+    score_s: float
+
+
+class MethodComparison(BaseModel):
+    kappa: dict[str, float]
+    sweep: list[SweepPoint]
+    inference: list[InferenceCost]
+    table_markdown: str

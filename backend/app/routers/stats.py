@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.models.schemas import EnsembleStats, SiteItem
+from app.models.schemas import EnsembleStats, MethodComparison, SiteItem
 from app.services import data_loader
 
 router = APIRouter(prefix="/api", tags=["stats"])
@@ -18,3 +18,8 @@ def get_ensemble_stats() -> EnsembleStats:
 @router.get("/sites", response_model=list[SiteItem])
 def get_sites() -> list[SiteItem]:
     return data_loader.list_sites()
+
+
+@router.get("/method-comparison", response_model=MethodComparison)
+def get_method_comparison() -> MethodComparison:
+    return data_loader.method_comparison()

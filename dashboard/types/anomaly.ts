@@ -81,6 +81,27 @@ export interface SiteItem {
   is_special: boolean;
 }
 
+export interface SweepPoint {
+  threshold_pct: number;
+  arima: number | null;
+  autoencoder: number | null;
+  cluster_segment: number | null;
+  zscore_stl: number | null;
+}
+
+export interface InferenceCost {
+  method: string;
+  fit_s: number;
+  score_s: number;
+}
+
+export interface MethodComparison {
+  kappa: Record<string, number>;
+  sweep: SweepPoint[];
+  inference: InferenceCost[];
+  table_markdown: string;
+}
+
 export interface AnomalyFilters {
   site?: string;
   date_from?: string;
