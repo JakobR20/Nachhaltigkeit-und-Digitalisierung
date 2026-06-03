@@ -1,13 +1,19 @@
+import { Suspense } from "react";
+
+import { AnomalyList } from "@/components/dashboard/AnomalyList";
+import { EnsembleCard } from "@/components/dashboard/EnsembleCard";
+import { FilterBarLoader } from "@/components/dashboard/FilterBarLoader";
+import { Header } from "@/components/dashboard/Header";
+
 export default function Home() {
   return (
     <main>
-      <h1 className="text-[28px] font-bold text-hig-text">THWS</h1>
-      <p className="text-[15px] text-hig-secondary">
-        Nachhaltigkeit &amp; Digitalisierung
-      </p>
-      <p className="mt-2 text-hig-secondary">
-        Energie-Anomalien — Liste folgt in Phase 3.
-      </p>
+      <Header subtitle="Energie-Anomalien — Kostenpriorisierte Übersicht" />
+      <EnsembleCard />
+      <Suspense>
+        <FilterBarLoader />
+        <AnomalyList />
+      </Suspense>
     </main>
   );
 }
