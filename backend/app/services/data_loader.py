@@ -134,12 +134,22 @@ def _load_series() -> pd.Series:
     return pd.read_parquet(FEATURES, columns=["value_kw"])["value_kw"]
 
 
-def _load_curve(site: str, ts: pd.Timestamp) -> list[LoadPoint]:
+def _load_curve(
+    site: str, ts: pd.Timestamp, anomaly_value: float | None = None
+) -> list[LoadPoint]:
+    """±3-day hourly curve, with the exact 15-min anomaly value injected at ts.
+
+    The curve is hourly (fast); a 15-min spike would otherwise be averaged away and
+    the marker (which uses the true value_kw) would sit off-chart. Injecting the real
+    point keeps the spike visible and the marker on the line.
+    """
     series = _load_series().xs(site, level="meter_id")
     win = series[(series.index >= ts - pd.Timedelta(days=3))
                  & (series.index <= ts + pd.Timedelta(days=3))]
-    return [LoadPoint(timestamp=str(t), value_kw=round(float(v), 3))
-            for t, v in win.items()]
+    points = {t: round(float(v), 3) for t, v in win.items()}
+    if anomaly_value is not None:
+        points[ts] = round(float(anomaly_value), 3)  # exact 15-min value at the anomaly
+    return [LoadPoint(timestamp=str(t), value_kw=v) for t, v in sorted(points.items())]
 
 
 def get_anomaly(nr: str) -> AnomalyDetail | None:
@@ -160,7 +170,7 @@ def get_anomaly(nr: str) -> AnomalyDetail | None:
             temperatur_c=c["temperatur_c"], wetter_beschreibung=c["wetter_beschreibung"],
             wochentag=a.get("wochentag"), feiertag=a.get("feiertag"),
             confidence=r["confidence"]),
-        load_curve=_load_curve(c["site"], ts),
+        load_curve=_load_curve(c["site"], ts, c["value_kw"]),
         expected_kw=c["expected_kw"], value_kw=c["value_kw"],
     )
 
