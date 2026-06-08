@@ -63,12 +63,34 @@ export function AnomalyList() {
 
   const items = data!;
   const total = items.reduce((s, a) => s + (a.jahreskosten_eur ?? 0), 0);
+  const sortBy = params.get("sort") ?? "cost";
+
+  const SECTIONS: { key: "hoch" | "mittel" | "niedrig"; label: string }[] = [
+    { key: "hoch", label: "Hoch" },
+    { key: "mittel", label: "Mittel" },
+    { key: "niedrig", label: "Niedrig" },
+  ];
 
   return (
     <div>
-      {items.map((a) => (
-        <AnomalyCard key={a.nr} a={a} />
-      ))}
+      {sortBy === "severity" ? (
+        items.map((a) => <AnomalyCard key={a.nr} a={a} />)
+      ) : (
+        SECTIONS.map(({ key, label }) => {
+          const group = items.filter((a) => a.schweregrad === key);
+          if (group.length === 0) return null;
+          return (
+            <section key={key} className="mb-5">
+              <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-hig-secondary">
+                {label} · {group.length}
+              </h2>
+              {group.map((a) => (
+                <AnomalyCard key={a.nr} a={a} />
+              ))}
+            </section>
+          );
+        })
+      )}
       <p className="mt-4 text-[13px] text-hig-secondary">
         {items.length} Anomalien · {fmtEur(total)} hochgerechnet (jährlich)
         <br />

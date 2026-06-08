@@ -31,6 +31,7 @@ class AnomalyListItem(BaseModel):
 class LoadPoint(BaseModel):
     timestamp: str
     value_kw: float
+    expected_kw: float | None = None
 
 
 class CostBreakdown(BaseModel):

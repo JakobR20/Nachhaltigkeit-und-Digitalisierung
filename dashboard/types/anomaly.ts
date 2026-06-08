@@ -25,6 +25,7 @@ export interface AnomalyListItem {
 export interface LoadPoint {
   timestamp: string;
   value_kw: number;
+  expected_kw: number | null;
 }
 
 export interface CostBreakdown {

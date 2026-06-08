@@ -24,7 +24,7 @@ import type { InferenceCost, SweepPoint } from "@/types/anomaly";
 const METHODS = ["zscore_stl", "arima", "cluster_segment", "autoencoder"];
 
 export function ResearchView() {
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["method-comparison"],
     queryFn: fetchMethodComparison,
   });
@@ -44,6 +44,19 @@ export function ResearchView() {
       {isError && (
         <Card className="rounded-xl bg-hig-card p-6 text-center shadow-sm">
           <p className="font-medium text-severity-high">Backend nicht erreichbar</p>
+          <p className="mt-1 text-[14px] text-hig-secondary">
+            Läuft uvicorn auf Port 8000? Starte es mit
+            <code className="mx-1 rounded bg-black/5 px-1">
+              uvicorn app.main:app --reload --app-dir backend
+            </code>
+          </p>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="mt-3 rounded-lg bg-hig-accent px-4 py-1.5 text-[14px] font-medium text-white disabled:opacity-50"
+          >
+            {isFetching ? "Lädt…" : "Erneut versuchen"}
+          </button>
         </Card>
       )}
       {isLoading && <Skeleton className="h-96 w-full rounded-xl" />}

@@ -5,7 +5,6 @@ import {
   Line,
   LineChart,
   ReferenceDot,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -18,6 +17,7 @@ export function LoadChart({ detail }: { detail: AnomalyDetail }) {
   const data = detail.load_curve.map((p) => ({
     t: new Date(p.timestamp).getTime(),
     kw: p.value_kw,
+    expected: p.expected_kw,
   }));
   const anomalyT = new Date(detail.timestamp).getTime();
 
@@ -71,13 +71,16 @@ export function LoadChart({ detail }: { detail: AnomalyDetail }) {
             }
             formatter={(v) => [`${Number(v).toFixed(1)} kW`, "Last"]}
           />
-          {detail.expected_kw !== null && (
-            <ReferenceLine
-              y={detail.expected_kw}
-              stroke="#8E8E93"
-              strokeDasharray="5 4"
-            />
-          )}
+          <Line
+            type="monotone"
+            dataKey="expected"
+            stroke="#8E8E93"
+            strokeWidth={1.3}
+            strokeDasharray="5 4"
+            dot={false}
+            connectNulls
+            isAnimationActive={false}
+          />
           <Line
             type="monotone"
             dataKey="kw"

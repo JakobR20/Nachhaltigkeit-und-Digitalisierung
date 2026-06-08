@@ -69,11 +69,12 @@ describe("EnsembleCard", () => {
 });
 
 describe("AnomalyCard", () => {
-  it("renders cost, site and severity", () => {
+  it("renders cost, site, method and is keyboard-focusable", () => {
     render(withClient(<AnomalyCard a={ANOMALY} />));
     expect(screen.getByText("Baumarkt_08")).toBeInTheDocument();
-    expect(screen.getByText("hoch")).toBeInTheDocument();
     expect(screen.getByText(/45,95/)).toBeInTheDocument();
-    expect(screen.getByText(/Details/)).toBeInTheDocument();
+    expect(screen.getByText("Cluster-Distanz")).toBeInTheDocument();
+    // severity is conveyed by the left border colour; the card is a focusable link
+    expect(screen.getByRole("link")).toHaveAttribute("tabindex", "0");
   });
 });

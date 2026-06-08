@@ -134,22 +134,39 @@ def _load_series() -> pd.Series:
     return pd.read_parquet(FEATURES, columns=["value_kw"])["value_kw"]
 
 
+@functools.lru_cache(maxsize=32)
+def _expected_profile(site: str) -> pd.Series:
+    """Median load per (weekday, hour) over the full history for one site."""
+    s = _load_series().xs(site, level="meter_id")
+    return s.groupby([s.index.dayofweek, s.index.hour]).median()
+
+
 def _load_curve(
     site: str, ts: pd.Timestamp, anomaly_value: float | None = None
 ) -> list[LoadPoint]:
-    """±3-day hourly curve, with the exact 15-min anomaly value injected at ts.
+    """±3-day hourly curve with a per-point expectation, plus the exact 15-min value.
 
     The curve is hourly (fast); a 15-min spike would otherwise be averaged away and
-    the marker (which uses the true value_kw) would sit off-chart. Injecting the real
-    point keeps the spike visible and the marker on the line.
+    the marker (true value_kw) would sit off-chart, so the exact point is injected.
+    The expectation is the median for that weekday+hour — a curve that follows the
+    daily/weekly rhythm, so over-/under-consumption reads as a gap from it.
     """
     series = _load_series().xs(site, level="meter_id")
     win = series[(series.index >= ts - pd.Timedelta(days=3))
                  & (series.index <= ts + pd.Timedelta(days=3))]
+    profile = _expected_profile(site)
     points = {t: round(float(v), 3) for t, v in win.items()}
     if anomaly_value is not None:
-        points[ts] = round(float(anomaly_value), 3)  # exact 15-min value at the anomaly
-    return [LoadPoint(timestamp=str(t), value_kw=v) for t, v in sorted(points.items())]
+        points[ts] = round(float(anomaly_value), 3)
+
+    out = []
+    for t in sorted(points):
+        exp = profile.get((t.dayofweek, t.hour))
+        out.append(LoadPoint(
+            timestamp=str(t), value_kw=points[t],
+            expected_kw=round(float(exp), 3) if exp is not None and pd.notna(exp) else None,
+        ))
+    return out
 
 
 def get_anomaly(nr: str) -> AnomalyDetail | None:

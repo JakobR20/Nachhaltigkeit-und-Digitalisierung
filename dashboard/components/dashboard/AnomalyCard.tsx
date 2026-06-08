@@ -2,18 +2,15 @@
 
 import { useRouter } from "next/navigation";
 
-import { Card } from "@/components/ui/card";
 import {
-  METHOD_COLORS,
   METHOD_LABELS,
+  SEVERITY_COLOR,
   fmtDateTime,
   fmtEur,
   segmentDe,
   truncate,
 } from "@/lib/format";
 import type { AnomalyListItem } from "@/types/anomaly";
-
-import { SeverityBadge } from "./SeverityBadge";
 
 export function AnomalyCard({ a }: { a: AnomalyListItem }) {
   const router = useRouter();
@@ -22,18 +19,13 @@ export function AnomalyCard({ a }: { a: AnomalyListItem }) {
   const lastLine =
     a.diff_kw !== null && a.diff_kw >= 0
       ? a.diff_pct !== null
-        ? `+${a.diff_pct.toFixed(0)}% Last (${a.value_kw?.toFixed(1)} kW statt ${a.expected_kw?.toFixed(1)} kW)`
-        : `${a.value_kw?.toFixed(1)} kW (Erwartung ${a.expected_kw?.toFixed(1)} kW)`
-      : `Minderverbrauch ${a.diff_kw?.toFixed(1)} kW (Erwartung ${a.expected_kw?.toFixed(1)} kW)`;
-
-  const methodLine =
-    a.also_flagged_by.length > 0
-      ? `${METHOD_LABELS[a.method] ?? a.method} · auch erkannt von ${a.also_flagged_by.map((m) => METHOD_LABELS[m] ?? m).join(", ")}`
-      : METHOD_LABELS[a.method] ?? a.method;
+        ? `+${a.diff_pct.toFixed(0)}% (${a.value_kw?.toFixed(1)} statt ${a.expected_kw?.toFixed(1)} kW)`
+        : `${a.value_kw?.toFixed(1)} kW`
+      : `−${Math.abs(a.diff_kw ?? 0).toFixed(1)} kW unter Erwartung`;
 
   const open = () => router.push(`/anomaly/${a.nr}`);
   return (
-    <Card
+    <div
       role="link"
       tabIndex={0}
       onClick={open}
@@ -43,30 +35,30 @@ export function AnomalyCard({ a }: { a: AnomalyListItem }) {
           open();
         }
       }}
-      className="mb-4 cursor-pointer rounded-xl bg-hig-card p-5 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-hig-accent"
+      className="mb-2 flex cursor-pointer items-center gap-4 rounded-xl bg-hig-card px-4 py-3 shadow-sm ring-1 ring-black/5 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-hig-accent"
+      style={{ borderLeft: `4px solid ${SEVERITY_COLOR[a.schweregrad]}` }}
     >
-      <div className="flex items-baseline justify-between">
-        <div className="flex items-baseline gap-3">
-          <span className="tabular-nums text-[28px] font-bold leading-none text-hig-text">
-            {fmtEur(a.mehrkosten_eur)}
+      {/* cost */}
+      <span className="tabular-nums w-28 shrink-0 text-[22px] font-bold leading-none text-hig-text">
+        {fmtEur(a.mehrkosten_eur)}
+      </span>
+      {/* middle */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[15px] font-medium text-hig-text">{a.site}</span>
+          <span className="text-[12px] text-hig-secondary">
+            {segmentDe(a.segment)} · {date}, {time}
           </span>
-          <SeverityBadge severity={a.schweregrad} />
         </div>
-        <span className="text-[17px] font-medium text-hig-text">{a.site}</span>
+        <div className="truncate text-[13px] text-[#3A3A3C]">
+          {lastLine} — {truncate(a.vermutete_ursache, 70)}
+        </div>
       </div>
-      <div className="mt-1.5 text-[14px] text-hig-secondary">
-        {segmentDe(a.segment)}, {date}, {time} Uhr
-      </div>
-      <div className="text-[14px] text-hig-text">{lastLine}</div>
-      <div className="mt-1 text-[14px] text-[#3A3A3C]">
-        {truncate(a.vermutete_ursache)}
-      </div>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-[13px]" style={{ color: METHOD_COLORS[a.method] }}>
-          ● {methodLine}
-        </span>
-        <span className="text-[14px] font-medium text-hig-accent">Details ›</span>
-      </div>
-    </Card>
+      {/* method + chevron */}
+      <span className="shrink-0 text-[12px] text-hig-secondary">
+        {METHOD_LABELS[a.method] ?? a.method}
+      </span>
+      <span className="shrink-0 text-[18px] text-hig-accent">›</span>
+    </div>
   );
 }
