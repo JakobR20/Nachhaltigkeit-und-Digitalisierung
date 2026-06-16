@@ -1,0 +1,15 @@
+method,flagged_validated,unique_contribution,precision_validated
+zscore_stl,20,17,100%
+arima,20,17,100%
+cluster_segment,20,20,100%
+autoencoder,9,9,100%
+ENSEMBLE_UNION,66,-,100%
+
+overlap_k_methods,count,,
+1,63,,
+2,3,,
+3,0,,
+4,0,,
+
+note,"no recall — no full ground truth, validated top candidates only",,
+note,"overlap via also_flagged_by captures only exact (site,timestamp) matches within each method's Top-20; cross-granularity overlap (cluster=segment-day vs point methods) is not captured → unique contributions are an upper bound",,

@@ -478,3 +478,35 @@ eine Schwellwert-Anpassung zur Reduktion auf handhabbare Anomalie-Anzahlen je
 Reviewer-Aufkommen (Re-Thresholding der vorberechneten Scores, keine Neu-Inferenz).
 Eine produktive Pipeline würde Anomalien zusätzlich über Schweregrad und
 Ensemble-Überlappung priorisieren.
+
+## Ensemble-Abdeckung auf der validierten Menge
+
+Quantifizierung der Ensemble-Dominanz auf den 66 validierten Anomalien
+(`scripts/ensemble_coverage.py` → `reports/tables/ensemble_coverage.csv`).
+**Definition:** Methoden-Zugehörigkeit je Anomalie = primäre `method` ∪
+`also_flagged_by` aus `annotation.csv`. Die 66 sind per Konstruktion bereits die
+prioritäts-deduplizierte **Vereinigung** der Top-20 je Methode — „Ensemble (Union)"
+= 66 ist daher trivial; aussagekräftig sind die Pro-Methode-Abdeckung und die
+eindeutigen Beiträge.
+
+| Methode | geflaggte validierte Anomalien | davon eindeutig | Precision |
+|---|---|---|---|
+| zscore_stl | 20 | 17 | 100 % |
+| arima | 20 | 17 | 100 % |
+| cluster_segment | 20 | 20 | 100 % |
+| autoencoder | 9 | 9 | 100 % |
+| **Ensemble (Union)** | **66** | — | **100 %** |
+
+Überlappung (von genau k Methoden geflaggt): k=1 → 63, k=2 → 3, k=3/4 → 0.
+**Kernaussage:** Das Ensemble liefert 66 validierte Treffer gegenüber der besten
+Einzelmethode (20) — **+46 zusätzliche** validierte Anomalien bei durchgehend 100 %
+Precision auf der validierten Menge.
+
+**Zwei wichtige Einschränkungen:**
+- **Kein Recall.** Es gibt keine vollständige Ground-Truth, nur die validierten
+  Top-Kandidaten — die Aussage lautet „mehr validierte Treffer bei gleicher
+  Precision", nicht „höherer Recall".
+- **Eindeutige Beiträge sind eine Obergrenze.** `also_flagged_by` erfasst nur
+  exakte `(site, timestamp)`-Überlappung innerhalb der Top-20; Cross-Granularität
+  (cluster = Segment-Tag vs. Punkt-Methoden) bleibt unerfasst, weshalb alle drei
+  beobachteten Überlappungen Punkt-Methoden-Paare (zscore↔arima) sind.
