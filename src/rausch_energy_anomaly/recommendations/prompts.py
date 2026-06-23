@@ -54,7 +54,7 @@ Verbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):
 - Aktuelle Last: {value_kw} kW
 - Erwartete Last (Median Vergleichstage): {expected_kw} kW
 - Differenz: {diff_kw} kW = {diff_pct} %
-- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): {wetter}
+- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ {plz}): {wetter}
 - Spotpreis (Stundenwert): {spotpreis}{preis_kontext}
 - Geschätzte Mehrkosten dieser Anomalie: {mehrkosten}
 
@@ -160,6 +160,7 @@ def render_user_prompt(ctx: FullContext, feiertag: str = "nein") -> str:
         )
     return USER_PROMPT_TEMPLATE.format(
         site=ctx.site,
+        plz=ctx.plz or "unbekannt",
         timestamp_human=ctx.timestamp.strftime("%d.%m.%Y %H:%M"),
         wochentag=_WEEKDAY_DE.get(ctx.timestamp.strftime("%A"), ctx.timestamp.strftime("%A")),
         feiertag=feiertag,

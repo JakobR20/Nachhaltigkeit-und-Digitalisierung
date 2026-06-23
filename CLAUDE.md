@@ -205,7 +205,7 @@ Die konkreten Module unter `src/schadschoepfung/models/` und `evaluation/` sind 
 
 Diese Punkte sind noch nicht abschließend geklärt. Vor blockierender Implementierung Rückfrage:
 
-1. **Postleitzahlen Baumärkte** – wird von Rausch nachgeliefert. Bis dahin gilt der Würzburg-Default (siehe v4 Abschnitt 1.4).
+1. **Postleitzahlen Baumärkte** – ✓ geliefert (PLZ im Dateinamen der neuen Exporte). Zuordnung frozen-ID → PLZ per Inhalts-Fingerprint verifiziert, echte Koordinaten in `config/sites.yaml`, Wetter standortgenau (`weather_by_site.parquet`). Würzburg-Default entfallen. Details: `reports/site_plz_mapping.md`. Verbleibend: `feiertag`-Flag der frozen `annotation.csv` nutzt noch BY-Kalender (bewusst nicht angefasst, da frozen).
 2. **Anschlussleistung je Standort** – falls geliefert, in `sites.yaml` ergänzen; Default `null`.
 3. **Öffnungszeiten je Baumarkt** – aus den Daten ableitbar (95.-Perzentil Wochen-Lastmuster), falls nicht geliefert.
 4. **CO₂-Intensität:** Default 380 g/kWh (Jahresmittel DE) oder stündlich via Energy-Charts `/public_power`. Entscheidung im Methodenkapitel.

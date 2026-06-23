@@ -26,26 +26,27 @@
     "diff_pct": 665.8,
     "n_vergleichstage": 7,
     "temperatur_c": 9.4,
-    "wetter_beschreibung": "Regen",
-    "niederschlag_mm": 0.2,
-    "windgeschwindigkeit_kmh": 5.8,
+    "wetter_beschreibung": "trocken",
+    "niederschlag_mm": 0.0,
+    "windgeschwindigkeit_kmh": 22.7,
     "spotpreis_ct_pro_kwh": 11.883,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 8.927,
     "dauer_h": 2.5,
-    "mehrkosten_eur": 33.69
+    "mehrkosten_eur": 33.69,
+    "plz": "25899"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 02.10.2024 07:45, Mittwoch\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 130.4 kW\n- Erwartete Last (Median Vergleichstage): 17.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +113.4 kW = +665.8 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 9.4 °C, Regen, Niederschlag 0.2 mm, Wind 6 km/h\n- Spotpreis (Stundenwert): 11.88 ct/kWh (24h-Schnitt 8.93 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 33.69 EUR (über ~2.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 02.10.2024 07:45, Mittwoch\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 130.4 kW\n- Erwartete Last (Median Vergleichstage): 17.0 (Median aus 7 Vergleichstagen) kW\n- Differenz: +113.4 kW = +665.8 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 25899): 9.4 °C, trocken, Niederschlag 0.0 mm, Wind 23 km/h\n- Spotpreis (Stundenwert): 11.88 ct/kWh (24h-Schnitt 8.93 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 33.69 EUR (über ~2.5 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "hoch",
-    "vermutete_ursache": "Ungeplante Erweiterung der Öffnungszeiten mit intensiverer Aktivität (z.B. Frühkundenspitzen oder Event) ohne entsprechende Absenkung der Last.",
+    "vermutete_ursache": "Ungeplante Aufwärmer-aktivierung in der Frühaufstunde, möglicherweise durch fehlendes oder unzureichendes Zeitprogramm.",
     "handlungsempfehlungen": [
-      "Überprüfen, ob es zu einem unerwarteten Erweiterungsangebot oder Event gekommen ist, das nicht in den Planvorgaben berücksichtigt wurde.",
-      "Prüfen, ob die HVAC-Systeme und Beleuchtung übermäßig eingeschaltet sind; optimale Regelung anpassen.",
-      "Erhöhen der Überwachungsintensität und Dokumentation der Anomalie für zukünftige Analyse."
+      "Überprüfen und optimieren des Zeitprogramms für die HVAC-Systeme, um sicherzustellen, dass sie nur während der Öffnungszeiten aktiv sind.",
+      "Prüfung und eventuelle Wartung der Sensorik und Regelungssysteme, um Fehlfunktionen auszuschließen.",
+      "Erhöhung der Nachtabsenkung für HVAC-Systeme, um unnötige Energieverbrauch zu reduzieren."
     ],
     "confidence": 0.85
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 7.21,
+  "processing_time_s": 7.08,
   "attempts": 1
 }

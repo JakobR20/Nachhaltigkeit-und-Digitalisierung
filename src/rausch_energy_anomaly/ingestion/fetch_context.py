@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import os
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -99,6 +100,47 @@ def find_gaps(
     for _, run in s.groupby(run_id):
         runs.append((run.iloc[0], run.iloc[-1], len(run)))
     return runs
+
+
+def build_weather_by_site(
+    category: str = "Baumärkte",
+    out_path: Path | None = None,
+) -> pd.DataFrame:
+    """Fetch DWD weather per site coordinate and persist as a MultiIndex parquet.
+
+    Coordinates come from ``config/sites.yaml`` (real PLZ centroids). Weather is
+    fetched once per unique ``(lat, lon)`` and replicated to every site sharing
+    that coordinate, then stored as MultiIndex ``(meter_id, timestamp)`` in
+    ``weather_by_site.parquet``. The detection artefacts are weather-independent
+    and untouched; only the LLM context layer reads this file.
+    """
+    out = PROCESSED / "weather_by_site.parquet" if out_path is None else out_path
+    sites = loader.load_sites().get("sites", [])
+    start, end = smart_meter_range(category)
+
+    coord_cache: dict[tuple[float, float], pd.DataFrame] = {}
+    frames = []
+    for entry in sites:
+        site = loader.resolve_site(entry["id"])
+        key = (round(float(site["lat"]), 4), round(float(site["lon"]), 4))
+        if key not in coord_cache:
+            lat, lon = key
+            w = fetch_chunked(
+                lambda s, e, lat=lat, lon=lon: get_weather(lat, lon, s, e),
+                start, end, f"DWD {entry['id']} {key}", pad_end_days=1,
+            )
+            w["hdd"] = (15 - w["temperature"]).clip(lower=0)
+            coord_cache[key] = w
+            log.info("Wetter %s @ %s: %d Stunden", entry["id"], key, len(w))
+        frames.append(pd.concat({entry["id"]: coord_cache[key]}, names=["meter_id", "timestamp"]))
+
+    df = pd.concat(frames).sort_index()
+    df.to_parquet(out)
+    log.info(
+        "weather_by_site.parquet: %d Zeilen, %d Sites, %d eindeutige Koordinaten.",
+        len(df), len(sites), len(coord_cache),
+    )
+    return df
 
 
 def _report_gaps(label: str, idx: pd.DatetimeIndex) -> None:

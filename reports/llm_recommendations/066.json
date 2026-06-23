@@ -25,27 +25,28 @@
     "diff_kw": 29.548,
     "diff_pct": 98.1,
     "n_vergleichstage": 7,
-    "temperatur_c": 16.4,
+    "temperatur_c": 18.2,
     "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
-    "windgeschwindigkeit_kmh": 19.8,
+    "windgeschwindigkeit_kmh": 16.6,
     "spotpreis_ct_pro_kwh": -0.001,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 9.001,
     "dauer_h": 1.75,
-    "mehrkosten_eur": 0.0
+    "mehrkosten_eur": 0.0,
+    "plz": "24109"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_24\n- Zeitpunkt: 09.05.2025 14:15, Freitag\n- Feiertag: nein\n- Detektion durch: autoencoder\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 59.7 kW\n- Erwartete Last (Median Vergleichstage): 30.1 (Median aus 7 Vergleichstagen) kW\n- Differenz: +29.5 kW = +98.1 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 16.4 °C, trocken, Niederschlag 0.0 mm, Wind 20 km/h\n- Spotpreis (Stundenwert): -0.00 ct/kWh (24h-Schnitt 9.00 ct/kWh)\n  → Spotpreis ist negativ — Stromverbrauch wird in dieser Stunde belohnt, nicht bestraft.\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~1.75 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_24\n- Zeitpunkt: 09.05.2025 14:15, Freitag\n- Feiertag: nein\n- Detektion durch: autoencoder\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 59.7 kW\n- Erwartete Last (Median Vergleichstage): 30.1 (Median aus 7 Vergleichstagen) kW\n- Differenz: +29.5 kW = +98.1 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 24109): 18.2 °C, trocken, Niederschlag 0.0 mm, Wind 17 km/h\n- Spotpreis (Stundenwert): -0.00 ct/kWh (24h-Schnitt 9.00 ct/kWh)\n  → Spotpreis ist negativ — Stromverbrauch wird in dieser Stunde belohnt, nicht bestraft.\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~1.75 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "hoch",
-    "vermutete_ursache": "Erhöhte Beleuchtung und HVAC-Last im Nachmittag aufgrund erhöhter Kundenaufkommen oder technischer Probleme.",
+    "vermutete_ursache": "Erhöhte Beleuchtung und HVAC-Last aufgrund verstärkten Kundenaufkommens oder eventueller Aktionen.",
     "handlungsempfehlungen": [
-      "Kundenfrequenz kontrollieren, um zu prüfen, ob der erhöhte Verbrauch durch mehr Kunden verursacht wird",
-      "Überprüfung und eventuelle Anpassung des Zeitprogramms für HVAC-Systeme im Nachmittag",
-      "Wartungstermin vereinbaren, um technische Ausfälle in HVAC- oder Beleuchtungsanlagen zu prüfen"
+      "Kundenzähler installieren, um den tatsächlichen Verkaufsfluss zu messen",
+      "Überprüfen der Beleuchtungs- und HVAC-Zeitprogramme auf optimale Einstellungen",
+      "Wartungstermin vereinbaren, um Regelungen der HVAC-Systeme zu überprüfen"
     ],
     "confidence": 0.85
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 6.33,
+  "processing_time_s": 5.87,
   "attempts": 1
 }

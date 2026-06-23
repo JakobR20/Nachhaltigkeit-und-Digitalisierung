@@ -25,27 +25,28 @@
     "diff_kw": -15.424,
     "diff_pct": -23.4,
     "n_vergleichstage": 3,
-    "temperatur_c": 1.0,
+    "temperatur_c": 1.4,
     "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
-    "windgeschwindigkeit_kmh": 16.9,
+    "windgeschwindigkeit_kmh": 10.4,
     "spotpreis_ct_pro_kwh": 14.156,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 15.804,
     "dauer_h": 3.0,
-    "mehrkosten_eur": 0.0
+    "mehrkosten_eur": 0.0,
+    "plz": "24852"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_19\n- Zeitpunkt: 28.01.2023 12:00, Samstag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 50.5 kW\n- Erwartete Last (Median Vergleichstage): 65.9 (Median aus 3 Vergleichstagen) kW\n- Differenz: -15.4 kW = -23.4 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 1.0 °C, trocken, Niederschlag 0.0 mm, Wind 17 km/h\n- Spotpreis (Stundenwert): 14.16 ct/kWh (24h-Schnitt 15.80 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_19\n- Zeitpunkt: 28.01.2023 12:00, Samstag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 50.5 kW\n- Erwartete Last (Median Vergleichstage): 65.9 (Median aus 3 Vergleichstagen) kW\n- Differenz: -15.4 kW = -23.4 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 24852): 1.4 °C, trocken, Niederschlag 0.0 mm, Wind 10 km/h\n- Spotpreis (Stundenwert): 14.16 ct/kWh (24h-Schnitt 15.80 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "mittel",
-    "vermutete_ursache": "Möglicherweise reduzierte Beleuchtung oder HVAC-Regelungen zur Energieeinsparung, da der Markt am Samstag normalerweise geringere Lasten hat.",
+    "vermutete_ursache": "Möglicherweise reduzierte Beleuchtung oder HVAC-Regelungen zur Energieeinsparung, da der Markt am Samstag normalerweise weniger Last hat als an Wochentagen.",
     "handlungsempfehlungen": [
       "Überprüfen, ob die Beleuchtungsanlagen und HVAC-Systeme korrekt auf den aktuellen Betriebszustand eingestellt sind.",
-      "Prüfen, ob die Lüftungssysteme optimiert sind, um Energie zu sparen, ohne die Luftqualität negativ zu beeinflussen.",
-      "Beobachten und nachprüfen, ob die Anomalie auch am nächsten Tag besteht, um eine dauerhafte Regelung zu überprüfen."
+      "Prüfen, ob die Lüftung oder Klimaanlage unnötig läuft, da das Wetter mild ist (1.4 °C).",
+      "Beobachten, ob sich diese Anomalie auch in anderen vergleichbaren Tagen wiederholt, um eine generell geringere Last zu bestätigen."
     ],
     "confidence": 0.8
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 7.31,
+  "processing_time_s": 7.39,
   "attempts": 1
 }

@@ -25,27 +25,28 @@
     "diff_kw": -0.24,
     "diff_pct": -2.9,
     "n_vergleichstage": 7,
-    "temperatur_c": 20.3,
-    "wetter_beschreibung": "Regen",
+    "temperatur_c": 19.6,
+    "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
     "windgeschwindigkeit_kmh": 13.0,
     "spotpreis_ct_pro_kwh": 10.562,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 10.211,
     "dauer_h": 0.25,
-    "mehrkosten_eur": 0.0
+    "mehrkosten_eur": 0.0,
+    "plz": "17192"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_15\n- Zeitpunkt: 27.08.2023 17:00, Sonntag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 8.0 kW\n- Erwartete Last (Median Vergleichstage): 8.2 (Median aus 7 Vergleichstagen) kW\n- Differenz: -0.2 kW = -2.9 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 20.3 °C, Regen, Niederschlag 0.0 mm, Wind 13 km/h\n- Spotpreis (Stundenwert): 10.56 ct/kWh (24h-Schnitt 10.21 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~0.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_15\n- Zeitpunkt: 27.08.2023 17:00, Sonntag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: nachmittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 8.0 kW\n- Erwartete Last (Median Vergleichstage): 8.2 (Median aus 7 Vergleichstagen) kW\n- Differenz: -0.2 kW = -2.9 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 17192): 19.6 °C, trocken, Niederschlag 0.0 mm, Wind 13 km/h\n- Spotpreis (Stundenwert): 10.56 ct/kWh (24h-Schnitt 10.21 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.00 EUR (über ~0.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "niedrig",
-    "vermutete_ursache": "Niedriger Kundenaufkommen am Sonntag Nachmittag im Baumarkt_15, möglicherweise wegen des schlechten Wetters",
+    "vermutete_ursache": "Niedriges Kundenaufkommen am Sonntag Nachmittag, da der Markt geschlossen ist und nur lokale Einheimische oder Online-Abholer aktiv sind.",
     "handlungsempfehlungen": [
-      "Kundenzahlen und Verkaufsleistung am Sonntag Nachmittag überwachen",
-      "Wetterfaktoren in die Kundenzählung einbeziehen, um Vorhersagen zu verbessern",
-      "Beleuchtungs- und Lüftungsstatus prüfen, ob Einsparungen möglich sind"
+      "Beobachten, ob dies ein zeitlich begrenzter Effekt ist oder eine allgemeine Tendenz.",
+      "Kontrollieren, ob die Beleuchtung und HVAC-Systeme korrekt auf die aktuelle Nutzung eingestellt sind.",
+      "Überprüfen, ob lokale Konkurrenten aktiv sind und möglicherweise Kunden wegmögen."
     ],
     "confidence": 0.75
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 6.42,
+  "processing_time_s": 6.41,
   "attempts": 1
 }

@@ -105,14 +105,14 @@ def _id_for(mapping_path: Path, filename: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# Site-Konfiguration: Würzburg-Defaults-Fallback
+# Site-Konfiguration: generischer defaults-Fallback
 # --------------------------------------------------------------------------- #
 _DEFAULTS_YAML = (
     "defaults:\n"
     "  lat: 49.7913\n"
     "  lon: 9.9534\n"
     "  bundesland: BY\n"
-    "  lat_lon_source: default_wuerzburg\n"
+    "  lat_lon_source: default_fallback\n"
 )
 
 
@@ -126,7 +126,7 @@ def test_resolve_site_full_fields_no_fallback(tmp_path, caplog):
     with caplog.at_level(logging.WARNING):
         site = loader.resolve_site("site_full", path=sites)
     assert (site["lat"], site["lon"], site["bundesland"]) == (50.1, 8.7, "HE")
-    assert "Würzburg" not in caplog.text
+    assert "default coords" not in caplog.text
 
 
 def test_resolve_site_null_fields_use_defaults_and_warn(tmp_path, caplog):
@@ -140,5 +140,5 @@ def test_resolve_site_null_fields_use_defaults_and_warn(tmp_path, caplog):
         site = loader.resolve_site("site_null", path=sites)
     assert site["lat"] == 49.7913
     assert site["bundesland"] == "BY"
-    assert site["lat_lon_source"] == "default_wuerzburg"
-    assert "Using default Würzburg coords for site=site_null" in caplog.text
+    assert site["lat_lon_source"] == "default_fallback"
+    assert "Using default coords from sites.yaml defaults for site=site_null" in caplog.text

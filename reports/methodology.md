@@ -176,9 +176,16 @@ Beide Perioden (96, 672) sind methodisch begründet; die Tagesperiode 96 ist der
 
 - **CO₂-Intensität:** Default 380 g/kWh (Jahresmittel DE) vs. stündliche Variante via
   Energy-Charts `/public_power`. Sensitivität der abgeleiteten CO₂-Aussagen hier diskutieren.
-- **Würzburg-Default:** Solange Postleitzahlen fehlen, werden alle Standorte mit Würzburger
-  Koordinaten/Bundesland (BY) bewettert. Sensitivität (regionale Wetterunterschiede,
-  Feiertags-Bundesland) als Limitation diskutieren.
+- **Standortgenaues Wetter:** Die RLM-Exporte wurden mit PLZ im Dateinamen nachgeliefert.
+  Die frozen-Sites (Baumarkt_03, 05–26) wurden per Inhalts-Fingerprint (Stundenmittel vs.
+  `features.parquet`, Match 1.000) eindeutig auf ihre PLZ-Datei abgebildet; daraus stammen
+  echte Koordinaten (PLZ-Centroid, pgeocode) in `config/sites.yaml`. Das Wetter wird je
+  Standort gezogen (`weather_by_site.parquet`) und in der LLM-Schicht site-genau gematcht.
+  Die Detektion (Anomalie-Set, κ, Ensemble-Coverage, Magnitude) ist wetterunabhängig und
+  bleibt unverändert. **Verbleibende Limitation:** Das `feiertag`-Flag in der eingefrorenen
+  `annotation.csv` wurde mit dem BY-Kalender berechnet; die echten Standorte liegen in
+  SH/MV/NI/NW/BB/TH. Eine standortgenaue Feiertagsbewertung würde das eingefrorene
+  Annotations-Artefakt verändern und unterbleibt daher bewusst. Zuordnung: `reports/site_plz_mapping.md`.
 - **Übertragbarkeit:** Innerhalb-Kategorie-Generalisierung (trainieren auf N Baumärkten,
   anwenden auf einen weiteren) statt Cross-Category-Transfer (v4 §1.3).
 - **Schwelle X + Ensemble vs. Sieger (Schritt 11):** beide ursprünglich offenen Fragen
@@ -400,11 +407,11 @@ unter `data/raw/{weather,prices}/` sind dokumentierter Fallback.
 Baseline (nahe Datenstart) sichtbar; bei `expected_kw = 0` bleibt `diff_pct` `None`
 statt Division durch null.
 
-**Wetter:** Eine Würzburg-Referenzstation für **alle** Sites — die Standort-PLZ steht
-von Rausch noch aus, daher fällt `sites.yaml` einheitlich auf den Würzburg-Default
-zurück. Das ist der reale Datenstand, kein stiller Fallback, und wird im Prompt so
-ausgewiesen. Temperatur liegt im Parquet bereits in °C vor; Wind wird m/s → km/h
-konvertiert, `condition` nach Deutsch gemappt. Fehlt der Stundenwert, sind alle
+**Wetter:** Standortgenau. `weather_by_site.parquet` hält je Site eine DWD-Reihe,
+gezogen am realen PLZ-Centroid (`config/sites.yaml`); `_lookup_weather(site, ts)` matcht
+die Stunde in der jeweiligen Site-Scheibe. Fehlt diese Datei, greift der Fallback auf die
+einstationige `weather.parquet`. Temperatur liegt im Parquet bereits in °C vor; Wind wird
+m/s → km/h konvertiert, `condition` nach Deutsch gemappt. Fehlt der Stundenwert, sind alle
 Wetterfelder `None` ("nicht verfügbar").
 
 **Strompreis:** Day-Ahead ist stündlich; der 15-min-Zeitstempel wird auf seine Stunde
@@ -431,11 +438,11 @@ V2-Production-Prompt (`SYSTEM_PROMPT_PRODUCTION`) → Ollama-Call (`qwen2.5:7b`,
 mit bis zu 3 Wiederholungen bei Parse-/HTTP-Fehlern.
 
 **Lauf-Statistik:** 66/66 erfolgreich (100 %), **0 Retries**, **0 Schema-Fehler**.
-Wall-Time 8:01 min gesamt, 6,6 s pro Anomalie (warmes Modell). Die strukturelle
+Wall-Time 7:23 min gesamt, 6,7 s pro Anomalie (warmes Modell). Die strukturelle
 Fehlerquote von 0 % bestätigt die zweistufige Garantie (Grammatik + Pydantic) aus
-Phase 2 unter Volllast.
+Phase 2 unter Volllast. (Lauf mit standortgenauem Wetter, vgl. „Standortgenaues Wetter".)
 
-**Schweregrad-Verteilung** als Sanity-Check: hoch 32, mittel 25, niedrig 9. Die
+**Schweregrad-Verteilung** als Sanity-Check: hoch 31, mittel 25, niedrig 10. Die
 Spreizung über alle drei Stufen zeigt **keinen** Modell-Bias zu „alles hoch"; das
 Modell stuft auch milde/ambivalente Anomalien entsprechend ein.
 
@@ -445,14 +452,13 @@ Modell stuft auch milde/ambivalente Anomalien entsprechend ein.
 |---|---|---|---|
 | zscore_stl | 20 | 0,835 | 0,80–0,85 |
 | arima | 17 | 0,818 | 0,75–0,85 |
-| cluster_segment | 20 | 0,825 | 0,75–0,85 |
-| autoencoder | 9 | 0,844 | 0,80–0,90 |
+| cluster_segment | 20 | 0,822 | 0,75–0,85 |
+| autoencoder | 9 | 0,828 | 0,80–0,85 |
 
-Zwei methodisch interessante Beobachtungen: Der **Autoencoder** erreicht die höchste
-mittlere Konfidenz (0,844) — konsistent mit seiner Pro-Site-Normierung und dem Fokus
-auf die Tagesform, der die vorgelegten Anomalien als deutlich erkennbar macht.
-**ARIMA** hat die niedrigste (0,818) — seine Forecast-Abweichungen sind nuancierter,
-und das LLM stuft sie als weniger eindeutig ein. Die Konfidenz ist hier die des
+Die Unterschiede sind klein (0,818–0,835): **Z-Score** erreicht die höchste mittlere
+Konfidenz (0,835), **ARIMA** die niedrigste (0,818) — seine Forecast-Abweichungen sind
+nuancierter, und das LLM stuft sie als weniger eindeutig ein als die deutlich
+ausgeprägten Punkt-/Tagesform-Anomalien. Die Konfidenz ist hier die des
 *Empfehlungsmodells* zur vorgelegten Anomalie, nicht die des Detektors selbst.
 
 **Limitation — HVAC/Beleuchtungs-Default-Hypothese:** Das LLM tendiert dazu, bei

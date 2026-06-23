@@ -71,12 +71,13 @@ def load_sites(path: str | Path = SITES_PATH) -> dict:
 def resolve_site(
     site_id: str, sites: dict | None = None, path: str | Path = SITES_PATH
 ) -> dict:
-    """Site-Metadaten inkl. Fallback auf die Würzburg-Defaults.
+    """Site-Metadaten inkl. optionalem Fallback auf einen `defaults:`-Block.
 
-    Fehlt eines der Felder lat/lon/bundesland auf Site-Ebene (oder ist null), wird
-    der Wert aus `defaults:` übernommen und eine WARNING geloggt – so ist beim
-    Pipeline-Lauf sofort sichtbar, welche Standorte noch auf den Default fallen
-    (Postleitzahlen werden von Rausch nachgeliefert).
+    Fehlt eines der Felder lat/lon/bundesland auf Site-Ebene (oder ist null) und
+    existiert ein `defaults:`-Block, wird der Wert von dort übernommen und eine
+    WARNING geloggt – so ist beim Pipeline-Lauf sofort sichtbar, welche Standorte
+    auf einen Default fallen. Der reguläre Datenstand pflegt für jeden Standort
+    echte PLZ-Koordinaten, sodass dieser Pfad nicht mehr greift.
     """
     data = sites if sites is not None else load_sites(path)
     defaults = data.get("defaults", {})
@@ -93,8 +94,7 @@ def resolve_site(
     if fell_back:
         merged["lat_lon_source"] = defaults.get("lat_lon_source", "default")
         logger.warning(
-            "Using default Würzburg coords for site=%s (plz pending from Rausch)",
-            site_id,
+            "Using default coords from sites.yaml defaults for site=%s", site_id
         )
     return merged
 

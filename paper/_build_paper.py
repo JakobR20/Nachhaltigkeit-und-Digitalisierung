@@ -47,8 +47,8 @@ TABLE2_HEAD = ["Methode", "n", "Konfidenz (Mittel)", "Bereich"]
 TABLE2_ROWS = [
     ["Z-Score", "20", "0,835", "0,80–0,85"],
     ["ARIMA", "17", "0,818", "0,75–0,85"],
-    ["Cluster-Distanz", "20", "0,825", "0,75–0,85"],
-    ["Autoencoder", "9", "0,844", "0,80–0,90"],
+    ["Cluster-Distanz", "20", "0,822", "0,75–0,85"],
+    ["Autoencoder", "9", "0,828", "0,80–0,85"],
 ]
 TABLE2_CAP = ("Tabelle 2: Mittlere Modellkonfidenz der LLM-Empfehlungen je "
               "Detektionsmethode. Eigene Darstellung.")
@@ -272,9 +272,9 @@ BODY: list[tuple] = [
         "abgeschnittene und überkonfidente Empfehlungen und schied aus. Ein "
         "deterministischer Kontext-Builder reichert jede Anomalie mit berechneten Fakten "
         "an, die das Modell nicht schätzen muss: aktuelle und erwartete Last (Median "
-        "desselben Wochentags und derselben Uhrzeit über sieben Vorwochen), Wetter einer "
-        "Referenzstation des Deutschen Wetterdienstes (Würzburg, da Standort-"
-        "Postleitzahlen fehlen), den Day-Ahead-Spotpreis sowie die im Code berechneten "
+        "desselben Wochentags und derselben Uhrzeit über sieben Vorwochen), standortgenaues "
+        "Wetter des Deutschen Wetterdienstes (eine Reihe je Standort am PLZ-Centroid), "
+        "den Day-Ahead-Spotpreis sowie die im Code berechneten "
         "Mehrkosten (Leistungsdifferenz × Dauer × Preis). Das Ausgabeschema umfasst "
         "Schweregrad, vermutete Ursache, genau drei priorisierte Handlungsempfehlungen "
         "und einen Konfidenzwert."),
@@ -352,16 +352,15 @@ BODY: list[tuple] = [
     ("h2", "4.6 LLM-Pipeline"),
     (P, "Über alle 66 bestätigten Anomalien erzeugte die Pipeline fehlerfrei "
         "strukturierte Empfehlungen: 66 von 66 erfolgreich, keine Wiederholungen, keine "
-        "Schemafehler. Die Gesamtlaufzeit betrug 8:01 Minuten, im Mittel 6,6 Sekunden je "
-        "Anomalie bei warmem Modell. Die Schweregrade verteilen sich auf hoch (32), "
-        "mittel (25) und niedrig (9), was gegen eine pauschale Hochstufung spricht. Die "
+        "Schemafehler. Die Gesamtlaufzeit betrug 7:23 Minuten, im Mittel 6,7 Sekunden je "
+        "Anomalie bei warmem Modell. Die Schweregrade verteilen sich auf hoch (31), "
+        "mittel (25) und niedrig (10), was gegen eine pauschale Hochstufung spricht. Die "
         "mittlere Modellkonfidenz differenziert leicht zwischen den Methoden (Tabelle 2): "
-        "Sie ist beim Autoencoder am höchsten (0,844) und bei ARIMA am niedrigsten "
+        "Sie ist bei der Z-Score-Methode am höchsten (0,835) und bei ARIMA am niedrigsten "
         "(0,818); diese Konfidenz bezieht sich auf das Empfehlungsmodell, nicht auf den "
-        "Detektor. Die höhere Konfidenz des Autoencoders ist konsistent mit seiner "
-        "Fokussierung auf die Tagesform, die die vorgelegten Anomalien deutlich erkennbar "
-        "macht; die nuancierteren Forecast-Abweichungen von ARIMA stuft das Modell "
-        "hingegen als weniger eindeutig ein."),
+        "Detektor. Die Unterschiede sind klein (0,818–0,835); die nuancierteren "
+        "Forecast-Abweichungen von ARIMA stuft das Modell tendenziell als weniger "
+        "eindeutig ein als die deutlich ausgeprägten Punkt- und Tagesform-Anomalien."),
     ("table2",),
     (P, "Als Beispiel meldete die Cluster-Distanz an einem Standort (Baumarkt_03) in der "
         "Nacht eine Last von 72,6 kW gegenüber einer erwarteten Last von 8,0 kW "
@@ -424,8 +423,8 @@ BODY: list[tuple] = [
     (P, "Die Architektur ist generisch angelegt und auf weitere Kategorien wie "
         "Tankstellen oder Bürogebäude übertragbar, sofern je Kategorie neu trainiert und "
         "re-kalibriert wird. Sinnvolle Folgeschritte sind eine quantitative "
-        "Qualitätsbewertung der Empfehlungen, die Anbindung standortgenauer Wetterdaten "
-        "sowie eine Priorisierung der Meldungen nach Schweregrad und Ensemble-"
+        "Qualitätsbewertung der Empfehlungen sowie eine Priorisierung der Meldungen nach "
+        "Schweregrad und Ensemble-"
         "Überlappung. Mittelfristig erlaubt die modulare Trennung von Detektion, "
         "Diagnose und Empfehlung, einzelne Komponenten unabhängig auszutauschen – etwa "
         "den Detektor zu ersetzen, ohne die Empfehlungsschicht anzupassen."),

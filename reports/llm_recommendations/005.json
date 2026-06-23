@@ -25,27 +25,28 @@
     "diff_kw": 11.868,
     "diff_pct": 21.7,
     "n_vergleichstage": 7,
-    "temperatur_c": 22.8,
+    "temperatur_c": 19.1,
     "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
-    "windgeschwindigkeit_kmh": 5.0,
+    "windgeschwindigkeit_kmh": 13.3,
     "spotpreis_ct_pro_kwh": 8.792,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 9.793,
     "dauer_h": 3.0,
-    "mehrkosten_eur": 3.13
+    "mehrkosten_eur": 3.13,
+    "plz": "25899"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 02.10.2023 13:00, Montag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 66.7 kW\n- Erwartete Last (Median Vergleichstage): 54.8 (Median aus 7 Vergleichstagen) kW\n- Differenz: +11.9 kW = +21.7 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 22.8 °C, trocken, Niederschlag 0.0 mm, Wind 5 km/h\n- Spotpreis (Stundenwert): 8.79 ct/kWh (24h-Schnitt 9.79 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 3.13 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 02.10.2023 13:00, Montag\n- Feiertag: nein\n- Detektion durch: cluster_segment\n- Segment: mittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 66.7 kW\n- Erwartete Last (Median Vergleichstage): 54.8 (Median aus 7 Vergleichstagen) kW\n- Differenz: +11.9 kW = +21.7 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 25899): 19.1 °C, trocken, Niederschlag 0.0 mm, Wind 13 km/h\n- Spotpreis (Stundenwert): 8.79 ct/kWh (24h-Schnitt 9.79 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 3.13 EUR (über ~3 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "mittel",
-    "vermutete_ursache": "Beleuchtung der Verkaufsfläche läuft möglicherweise länger als nötig, da es bereits hell ist (22.8 °C).",
+    "vermutete_ursache": "Beleuchtung der Verkaufsfläche läuft möglicherweise länger als nötig, da Montagmorgen noch nicht vollständig beendet ist.",
     "handlungsempfehlungen": [
-      "Überprüfen und optimieren der Beleuchtungszeitprogramme, insbesondere für die Mittags- und Nachmittagszeiten.",
-      "Prüfung der Lüftungssysteme auf unnötige Betriebszeiten, da das Wetter trocken ist (Niederschlag 0.0 mm).",
-      "Wartungstermin vereinbaren, um die Regelungen des HVAC-Systems zu überprüfen und eventuelle Überhitzungen abzustimmen."
+      "Überprüfen und optimieren der Beleuchtungszeitprogramme, um sie auf die tatsächlichen Öffnungszeiten abzustimmen",
+      "Prüfen, ob HVAC-Systeme unnötig laufen, da das Wetter angenehm ist (19.1 °C)",
+      "Kontrollieren der Kühlanlagen im Gartencenter und Getränkebereich, ob sie nicht übermäßig laufen"
     ],
-    "confidence": 0.85
+    "confidence": 0.8
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 7.08,
+  "processing_time_s": 6.75,
   "attempts": 1
 }

@@ -18,10 +18,10 @@ explicitly because both occur in the real data:
 deterministic excess-cost estimate from the cached parquets (JSON cache is the
 documented fallback). Design notes for Phase 3:
 
-- Weather uses a single Würzburg reference station for ALL sites — site PLZ is
-  still pending from Rausch, so sites.yaml resolves every site to the Würzburg
-  default. This is the real data state, not a silent fallback; the prompt labels
-  it as such.
+- Weather is site-specific: ``weather_by_site.parquet`` holds one DWD series per
+  site, fetched at the site's real PLZ centroid (config/sites.yaml). The hour is
+  matched within the site's own slice. When that file is absent the layer falls
+  back to the single-station ``weather.parquet``.
 - Spot price is hourly (day-ahead is always hourly); the 15-min anomaly timestamp
   is floored to its hour.
 - Excess cost is computed in code, never by the LLM (Phase-1 finding: the model
@@ -37,7 +37,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from rausch_energy_anomaly.ingestion.rlm_loader import load_category
+from rausch_energy_anomaly.ingestion.rlm_loader import (
+    load_category,
+    load_sites,
+    load_smartmeter,
+    resolve_site,
+)
 
 TZ = "Europe/Berlin"
 LOOKBACK_WEEKS = 7
@@ -45,6 +50,7 @@ _CATEGORY = "Baumärkte"
 
 _ROOT = Path(__file__).resolve().parents[3]
 _WEATHER_PARQUET = _ROOT / "data" / "processed" / "weather.parquet"
+_WEATHER_BY_SITE_PARQUET = _ROOT / "data" / "processed" / "weather_by_site.parquet"
 _PRICES_PARQUET = _ROOT / "data" / "processed" / "prices.parquet"
 
 # --- unit conversions (parquet stores raw SI / market units) ---
@@ -109,19 +115,46 @@ class FullContext:
     spotpreis_durchschnitt_24h_ct_pro_kwh: float | None
     dauer_h: float
     mehrkosten_eur: float | None
+    plz: str | None = None
 
 
 @lru_cache(maxsize=8)
 def _category_values(category: str) -> pd.Series:
-    """Load and cache the 15-min value_kw series (MultiIndex meter_id/timestamp)."""
+    """15-min value_kw series (MultiIndex meter_id/timestamp), keyed by frozen ids.
+
+    The RLM files were re-delivered under PLZ filenames, so ``load_category``
+    now assigns them fresh meter_ids (Baumarkt_27..). The frozen analysis is
+    keyed 03-26, so each site's file is loaded directly under its frozen id via
+    the ``file:`` entry in config/sites.yaml. When sites.yaml has no entries the
+    function falls back to ``load_category`` (auto meter_ids).
+    """
+    sites = load_sites().get("sites", [])
+    if sites:
+        frames = [
+            load_smartmeter(_ROOT / s["file"], meter_id=s["id"])["value_kw"] for s in sites
+        ]
+        return pd.concat(frames).sort_index()
     return load_category(category)["value_kw"]
 
 
 @lru_cache(maxsize=1)
 def _weather_frame() -> pd.DataFrame:
-    """Cached weather parquet, index converted to Europe/Berlin."""
-    w = pd.read_parquet(_WEATHER_PARQUET)
-    w.index = w.index.tz_convert(TZ)
+    """Cached weather, index converted to Europe/Berlin.
+
+    Prefers the per-site weather (``weather_by_site.parquet``, MultiIndex
+    meter_id/timestamp built from the real PLZ coordinates); falls back to the
+    single-station ``weather.parquet`` (flat hourly index) when the per-site
+    file is absent.
+    """
+    path = _WEATHER_BY_SITE_PARQUET if _WEATHER_BY_SITE_PARQUET.exists() else _WEATHER_PARQUET
+    w = pd.read_parquet(path)
+    if isinstance(w.index, pd.MultiIndex):
+        ts = w.index.get_level_values("timestamp").tz_convert(TZ)
+        w.index = pd.MultiIndex.from_arrays(
+            [w.index.get_level_values("meter_id"), ts], names=["meter_id", "timestamp"]
+        )
+    else:
+        w.index = w.index.tz_convert(TZ)
     return w
 
 
@@ -189,13 +222,19 @@ def _r1(v: object) -> float | None:
     return round(float(v), 1) if pd.notna(v) else None  # type: ignore[arg-type]
 
 
-def _lookup_weather(ts: pd.Timestamp) -> _Weather:
-    """Weather at the anomaly hour (Würzburg reference station for all sites).
+def _lookup_weather(site: str, ts: pd.Timestamp) -> _Weather:
+    """Weather at the anomaly hour for ``site``'s own coordinate.
 
-    Returns an empty ``_Weather`` when the cache has no record for the hour, so the
-    caller stays valid and the prompt can say "Wetterdaten nicht verfügbar".
+    With the per-site frame (MultiIndex) the site's slice is selected; a flat
+    single-station frame is used as-is (fallback / tests). Returns an empty
+    ``_Weather`` when no record exists for the site or hour, so the caller stays
+    valid and the prompt can say "Wetterdaten nicht verfügbar".
     """
     w = _weather_frame()
+    if isinstance(w.index, pd.MultiIndex):
+        if site not in w.index.get_level_values("meter_id"):
+            return _Weather()
+        w = w.xs(site, level="meter_id")
     hour = ts.floor("h")
     if hour not in w.index:
         return _Weather()
@@ -296,7 +335,12 @@ def build_full_context(
     base = build_minimal_context(site, timestamp, category)
     series = _category_values(category).xs(site, level="meter_id")
 
-    weather = _lookup_weather(base.timestamp)
+    try:
+        plz = resolve_site(base.site).get("plz")
+    except KeyError:
+        plz = None  # site not in sites.yaml (e.g. synthetic test site)
+
+    weather = _lookup_weather(base.site, base.timestamp)
     price = _lookup_price(base.timestamp)
     dauer_h = _estimate_duration_h(method, segment, series, base.timestamp, base.expected_kw)
     mehrkosten = _estimate_cost_eur(base.diff_kw, dauer_h, price.spotpreis_ct_pro_kwh)
@@ -319,4 +363,5 @@ def build_full_context(
         spotpreis_durchschnitt_24h_ct_pro_kwh=price.spotpreis_durchschnitt_24h_ct_pro_kwh,
         dauer_h=dauer_h,
         mehrkosten_eur=mehrkosten,
+        plz=plz,
     )

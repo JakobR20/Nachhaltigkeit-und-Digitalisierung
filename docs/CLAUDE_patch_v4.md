@@ -58,14 +58,21 @@ Rauschs Einschätzung: Modell auf Baumärkten trainieren → auf Tankstellen anw
 - Übertragbarkeit-Frage bleibt – aber nur **innerhalb derselben Kategorie**: trainieren auf z. B. 4 Baumärkten, anwenden auf einen 5. Baumarkt. Das ist die methodisch tragfähige Variante.
 - Folie 6 der internen Architektur-PPT (`Übertragbarkeit: Cluster-Zuordnung über Branchen hinweg`) wird im Paper anders formuliert: **Innerhalb-Kategorie-Generalisierung** statt Cross-Category-Transfer.
 
-### 1.4 Würzburg als Default-Standort bis PLZs vorliegen
+### 1.4 Standortgenaues Wetter (PLZ geliefert — Würzburg-Default entfallen)
 
-Rausch liefert die Postleitzahlen zu den Baumärkten nach. Bis dahin:
+**✓ Aufgelöst (Stand 2026-06-22).** Die Baumarkt-Exporte tragen die PLZ im Dateinamen.
+Die Zuordnung frozen-ID (03, 05–26) → PLZ wurde per Inhalts-Fingerprint (Stundenmittel vs.
+`features.parquet`, Match 1.000) verifiziert — nicht über die automatische meter_id. Daraus:
 
-- Default Lat/Lon: **49.7913 / 9.9534** (Würzburg Innenstadt)
-- Default Bundesland: **BY** (für `holidays`-Library: bayerische Feiertage)
-- Bright-Sky-API wird mit diesen Koordinaten für alle Sites ohne explizite Standortinfo abgefragt.
-- `sites.yaml` markiert das transparent über `lat_lon_source: default_wuerzburg`, damit später nachvollziehbar ist, welche Sites noch auf den Default fallen.
+- Echte Koordinaten je Standort (PLZ-Centroid via `pgeocode`) in `config/sites.yaml`.
+- Wetter wird je Standort gezogen (`data/processed/weather_by_site.parquet`, MultiIndex
+  site/timestamp) und in der LLM-Schicht site-genau gematcht (`_lookup_weather(site, ts)`).
+- Würzburg-Default (49.7913 / 9.9534, BY) und der `defaults:`-Block in `sites.yaml` sind entfernt.
+- Verbleibende Limitation: Das `feiertag`-Flag der eingefrorenen `annotation.csv` nutzt noch den
+  BY-Kalender; eine Neuberechnung würde das frozen-Artefakt verändern und unterbleibt bewusst.
+
+Zuordnungstabelle und Befunde (u. a. Baumarkt_16≡18, 20≡21 inhaltsgleich): `reports/site_plz_mapping.md`.
+Der ursprüngliche Default-Mechanismus (unten) bleibt als historische Referenz dokumentiert.
 
 ---
 

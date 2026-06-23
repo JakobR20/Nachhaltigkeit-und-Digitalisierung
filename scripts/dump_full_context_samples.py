@@ -29,7 +29,7 @@ def main() -> None:
     rows = load_selected()
     lines = ["# Full-Context-Stichproben (Phase 3, Schritt F)\n"]
     lines.append("Deterministische Werte, die das LLM in Phase 4 sieht. "
-                 "Wetter = Würzburg-Referenz, Spotpreis = Stundenwert, "
+                 "Wetter = standortgenau (DWD am Site-PLZ-Centroid), Spotpreis = Stundenwert, "
                  "Mehrkosten im Code gerechnet.\n")
     lines.append("\n| nr | method | value_kw | expected_kw | diff_kw | temp °C | Wetter "
                  "| Spotpreis ct/kWh | Dauer h | Mehrkosten EUR |")

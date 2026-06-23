@@ -25,27 +25,28 @@
     "diff_kw": 5.196,
     "diff_pct": 419.0,
     "n_vergleichstage": 7,
-    "temperatur_c": 12.0,
+    "temperatur_c": 12.5,
     "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
-    "windgeschwindigkeit_kmh": 9.4,
+    "windgeschwindigkeit_kmh": 11.9,
     "spotpreis_ct_pro_kwh": 7.245,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 6.013,
     "dauer_h": 2.25,
-    "mehrkosten_eur": 0.85
+    "mehrkosten_eur": 0.85,
+    "plz": "33378"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_14\n- Zeitpunkt: 13.09.2025 02:00, Samstag\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: nachts\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 6.4 kW\n- Erwartete Last (Median Vergleichstage): 1.2 (Median aus 7 Vergleichstagen) kW\n- Differenz: +5.2 kW = +419.0 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 12.0 °C, trocken, Niederschlag 0.0 mm, Wind 9 km/h\n- Spotpreis (Stundenwert): 7.25 ct/kWh (24h-Schnitt 6.01 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.85 EUR (über ~2.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_14\n- Zeitpunkt: 13.09.2025 02:00, Samstag\n- Feiertag: nein\n- Detektion durch: zscore_stl\n- Segment: nachts\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 6.4 kW\n- Erwartete Last (Median Vergleichstage): 1.2 (Median aus 7 Vergleichstagen) kW\n- Differenz: +5.2 kW = +419.0 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 33378): 12.5 °C, trocken, Niederschlag 0.0 mm, Wind 12 km/h\n- Spotpreis (Stundenwert): 7.25 ct/kWh (24h-Schnitt 6.01 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 0.85 EUR (über ~2.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "mittel",
-    "vermutete_ursache": "Nachtabsenkung der Beleuchtung und Kühlanlagen ist fehlerhaft eingestellt oder komplett ausgeschaltet, obwohl die Filiale noch geöffnet war.",
+    "vermutete_ursache": "Nachtabsenkung der Beleuchtung und HVAC-Systeme wurde nicht eingehalten; möglicherweise ist ein Zeitprogramm fehlerhaft eingerichtet oder nicht aktiviert.",
     "handlungsempfehlungen": [
-      "Überprüfen und korrekt einstellen der Zeitprogramme für Nachtabsenkung in der HVAC-Steuerung",
-      "Prüfung und Anpassung der Beleuchtungsplanung, sicherzustellen, dass auch nachts nur notwendige Lampen betrieben werden",
-      "Wartungstermin vereinbaren, um die Funktion der Kühlanlagen zu überprüfen"
+      "Überprüfen Sie denzeitlichen Status der Beleuchtungs- und HVAC-Zeitprogramme, um sicherzustellen, dass sie korrekt für nachts eingestellt sind.",
+      "Prüfen Sie die Steuerung des Lüftungssystems auf mögliche Defekte oder Fehlfunktionen, da dies einen zusätzlichen Lastverbrauch verursachen könnte.",
+      "Erstellen Sie eine Notfallanweisung für den Fall von weiteren Anomalien und überprüfen Sie die Implementierung regelmäßig."
     ],
     "confidence": 0.85
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 6.89,
+  "processing_time_s": 7.62,
   "attempts": 1
 }

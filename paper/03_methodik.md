@@ -13,7 +13,7 @@
 - **Besonderheiten:** dynamische Header-Position, DST-Varianten (Herbst-Duplikate /
   Frühjahrs-Lücke), Europe/Berlin lokal. [Detail aus EDA übernehmen, knapp halten]
 - **Externe Kontextdaten:** Wetter (Bright Sky/DWD) und Day-Ahead-Strompreis (Energy-Charts),
-  monatsweise gecacht. Würzburg-Referenz für alle Sites (PLZ stehen aus → Limitation Kap. 5).
+  monatsweise gecacht. Wetter standortgenau je PLZ-Centroid (eine DWD-Reihe pro Site).
 
 ## 3.2 Train/Test-Split (~50 W)
 
@@ -80,7 +80,7 @@
   Evidenz `reports/llm_evaluation/variant_comparison.md`]
 - **Kontext-Builder** (`build_full_context`): reichert jede Anomalie mit **deterministisch
   berechneten** Fakten an — Lastgang (`value_kw`, `expected_kw` als 7-Wochen-Median,
-  `diff_kw/pct`), Wetter (Würzburg-Referenz), Strompreis (Day-Ahead, ct/kWh), **Mehrkosten
+  `diff_kw/pct`), Wetter (standortgenau je Site-PLZ), Strompreis (Day-Ahead, ct/kWh), **Mehrkosten
   im Code** (`diff_kw · dauer_h · preis`, methodenabhängige Dauer). Das LLM schätzt keine
   Zahlen. [methodology.md „Kontext-Builder (Phase 3)"; Samples `reports/llm_evaluation/full_context_samples.md`]
 - **Produktionslauf (Phase 4):** über alle 66 `plausibel_anomal`-Anomalien; Output

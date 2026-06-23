@@ -49,11 +49,11 @@
 
 ## 4.6 LLM-Pipeline-Statistik (~120 W)
 
-- **Lauf:** 66/66 erfolgreich (100 %), **0 Retries**, **0 Schema-Fehler**; 6,6 s/Anomalie
-  (warm), 8:01 min gesamt → bestätigt zweistufige Garantie (Grammatik + Pydantic).
-- **Schweregrad-Verteilung:** hoch 32 / mittel 25 / niedrig 9 (kein „alles hoch"-Bias).
-- **Konfidenz pro Methode** (Tabelle aus methodology.md Phase 4): AE höchste mean **0,844**
-  (0,80–0,90), ARIMA niedrigste **0,818** (0,75–0,85); zscore 0,835, cluster 0,825.
+- **Lauf:** 66/66 erfolgreich (100 %), **0 Retries**, **0 Schema-Fehler**; 6,7 s/Anomalie
+  (warm), 7:23 min gesamt → bestätigt zweistufige Garantie (Grammatik + Pydantic).
+- **Schweregrad-Verteilung:** hoch 31 / mittel 25 / niedrig 10 (kein „alles hoch"-Bias).
+- **Konfidenz pro Methode** (Tabelle aus methodology.md Phase 4): zscore höchste mean **0,835**
+  (0,80–0,85), ARIMA niedrigste **0,818** (0,75–0,85); AE 0,828, cluster 0,822.
   Interpretationshinweis kurz: Konfidenz des Empfehlungsmodells, nicht des Detektors.
 - **Qualitative Plausibilitätssichtung:** Die 66 vom LLM generierten Empfehlungen wurden
   durch die Autoren qualitativ gesichtet und durchgängig als plausibel für den

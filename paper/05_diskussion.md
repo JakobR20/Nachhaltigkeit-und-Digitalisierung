@@ -30,8 +30,11 @@
   erfahrungsbasiert HVAC-/Beleuchtungsfehler vor — als **Prüf-Aufträge ans
   Facility-Management** zu lesen, nicht als verifizierte Diagnose. Vor-Ort-Verifizierung
   nicht möglich. [methodology.md Phase 4, Limitation]
-- **Wetter zentralisiert:** Würzburg-Referenz für alle Sites (Site-PLZ fehlen) → regionale
-  Wetter-/Feiertagsunterschiede nicht abgebildet; Sensitivität diskutieren. [v4 §1.4]
+- **Wetter standortgenau:** Je Site wird das Wetter am realen PLZ-Centroid gezogen (PLZ aus
+  den nachgelieferten Dateinamen, Zuordnung per Inhalts-Fingerprint verifiziert). Verbleibende
+  Limitation: das eingefrorene `feiertag`-Flag der Annotation nutzt den BY-Kalender, die echten
+  Standorte liegen in SH/MV/NI/NW/BB/TH — eine standortgenaue Feiertagsbewertung würde das
+  eingefrorene Annotations-Artefakt verändern und unterbleibt bewusst. [site_plz_mapping.md]
 - **Quality-Bewertung der LLM-Empfehlungen:** Eine systematische quantitative
   Quality-Bewertung der einzelnen Empfehlungen wurde nicht durchgeführt. Die Plausibilität
   wurde qualitativ durch die Autoren geprüft. Eine quantitative Bewertung über strukturierte
@@ -45,5 +48,5 @@
 
 - Innerhalb-Kategorie-Generalisierung (trainieren auf N Baumärkten, anwenden auf N+1) als
   tragfähige Variante; Cross-Category als nächster Schritt.
-- Weiter: Phase-5-Qualitätskennzahl ins Paper, Site-PLZ → lokale Wetterdaten,
+- Weiter: Phase-5-Qualitätskennzahl ins Paper,
   Ensemble-Priorisierung über Schweregrad + Überlappung.

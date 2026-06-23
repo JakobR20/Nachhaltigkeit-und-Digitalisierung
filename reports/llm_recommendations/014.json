@@ -25,27 +25,28 @@
     "diff_kw": 74.296,
     "diff_pct": 346.9,
     "n_vergleichstage": 7,
-    "temperatur_c": 2.9,
+    "temperatur_c": -3.2,
     "wetter_beschreibung": "trocken",
     "niederschlag_mm": 0.0,
-    "windgeschwindigkeit_kmh": 5.4,
+    "windgeschwindigkeit_kmh": 7.6,
     "spotpreis_ct_pro_kwh": 14.827,
     "spotpreis_durchschnitt_24h_ct_pro_kwh": 11.133,
     "dauer_h": 2.25,
-    "mehrkosten_eur": 24.79
+    "mehrkosten_eur": 24.79,
+    "plz": "25899"
   },
-  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 21.03.2025 07:30, Freitag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 95.7 kW\n- Erwartete Last (Median Vergleichstage): 21.4 (Median aus 7 Vergleichstagen) kW\n- Differenz: +74.3 kW = +346.9 %\n- Wetter zum Anomalie-Zeitpunkt (Würzburg-Referenzstation, Standort-PLZ ausstehend): 2.9 °C, trocken, Niederschlag 0.0 mm, Wind 5 km/h\n- Spotpreis (Stundenwert): 14.83 ct/kWh (24h-Schnitt 11.13 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 24.79 EUR (über ~2.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
+  "prompt": "Anomalie-Befund:\n- Standort: Baumarkt_06\n- Zeitpunkt: 21.03.2025 07:30, Freitag\n- Feiertag: nein\n- Detektion durch: arima\n- Segment: vormittag\n\nVerbrauchs-Kontext (deterministisch berechnet, nicht vom LLM zu schätzen):\n- Aktuelle Last: 95.7 kW\n- Erwartete Last (Median Vergleichstage): 21.4 (Median aus 7 Vergleichstagen) kW\n- Differenz: +74.3 kW = +346.9 %\n- Wetter zum Anomalie-Zeitpunkt (DWD-Station nahe Standort-PLZ 25899): -3.2 °C, trocken, Niederschlag 0.0 mm, Wind 8 km/h\n- Spotpreis (Stundenwert): 14.83 ct/kWh (24h-Schnitt 11.13 ct/kWh)\n- Geschätzte Mehrkosten dieser Anomalie: 24.79 EUR (über ~2.25 h)\n\nBitte gib eine strukturierte Empfehlung im vorgegebenen JSON-Format.\nSei konkret, nicht generisch. Beziehe dich auf den Baumarkt-Kontext.\n\nHinweise zu den Feldern:\n- confidence: Dezimalzahl zwischen 0.0 und 1.0 (z.B. 0.85, nicht 85).\n- vermutete_ursache: max. 250 Zeichen, konkret und standortbezogen statt allgemein.\n- handlungsempfehlungen: genau 3 Stück, nach Priorität geordnet, je max. 150 Zeichen.\n- Die Mehrkosten sind bereits berechnet; bei negativem Spotpreis können sie 0 oder\n  negativ sein. Übernimm die Zahl, rechne sie nicht neu.",
   "recommendation": {
     "schweregrad": "hoch",
-    "vermutete_ursache": "Heizung läuft stärker als nötig, da der Raum noch nicht vollständig abgekühlt ist, obwohl die Öffnungszeit um 08:00 Uhr bevorsteht.",
+    "vermutete_ursache": "Heizung läuft stärker als nötig, da der Raum noch nicht genügend erwärmt ist, obwohl die Öffnungszeit naht.",
     "handlungsempfehlungen": [
-      "Heizungsregelung anpassen, damit die Temperatur im Bereich von 16-18 °C bleibt, unabhängig vom Wetter",
-      "Lüftung reduzieren, um den Energieverbrauch zu senken, sobald die Raumtemperatur angemessen ist",
-      "Überprüfung der Regelungssysteme zur Prüfung und eventueller Optimierung der Heizungs- und Lüftungstechnik vereinbaren"
+      "Prüfen, ob die Temperaturregelung korrekt eingestellt ist und keine Überhitzung des Raumes verursacht.",
+      "Überprüfen, ob alle Heizungsanlagen optimiert sind und keine Leckage oder Wärmeverluste vorliegen.",
+      "Erwägen der Einstellung eines Mindesttemperatur-Schwellwerts, um unnötige Heizenergie zu sparen."
     ],
     "confidence": 0.85
   },
   "llm_model": "qwen2.5:7b",
-  "processing_time_s": 7.47,
+  "processing_time_s": 6.81,
   "attempts": 1
 }

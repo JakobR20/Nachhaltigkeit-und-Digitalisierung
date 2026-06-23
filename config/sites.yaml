@@ -1,22 +1,199 @@
 # Standort-Metadaten (extern gepflegt – die RLM-Excels enthalten keine Metadaten).
-# Defaults greifen, solange Rausch die Postleitzahlen noch nicht geliefert hat
-# (Status 26.05.2026, vgl. CLAUDE_patch_v4.md Abschnitt 1.4 / 2).
+#
+# lat/lon stammen aus dem PLZ-Centroid (pgeocode, Datenstand GeoNames) der von
+# Rausch nachgelieferten, PLZ-benannten Exporte. Die Zuordnung frozen-ID -> PLZ
+# wurde per Inhalts-Fingerprint (Stundenmittel vs. features.parquet, Match 1.000)
+# verifiziert, NICHT über die automatische meter_id. Siehe reports/site_plz_mapping.md.
+#
+# Hinweis: Baumarkt_16==18 und Baumarkt_20==21 sind inhaltsgleiche Zeitreihen im
+# eingefrorenen Analyse-Set und teilen sich daher Datei, PLZ und Koordinaten.
 
-defaults:
-  lat: 49.7913
-  lon: 9.9534
-  bundesland: BY
-  lat_lon_source: default_wuerzburg
-  fallback_reason: "Postleitzahlen werden von Rausch noch geliefert (Status 26.05.2026)"
-
-# Hinweis: Die konkrete Site-Liste wird in der Loader-Integration (v4 §5 Schritt 3)
-# aus den Kategorie-Ordnern unter data/raw/rlm/ + data/processed/_meter_id_mapping.csv
-# erzeugt. Beispiel-Eintrag als Schema-Vorlage:
 sites:
-  - id: baumarkt_01
-    file: data/raw/rlm/baumarkt_01.xlsx
+  - id: Baumarkt_03
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_143521_99610_26.xlsx
     category: baumarkt
-    # lat/lon/bundesland fallen aktuell auf defaults zurück
-    operating_hours: "Mo-Sa 07:00-20:00"
-    connected_load_kw: null
-    plz: null                       # wird nach Rausch-Lieferung ergänzt
+    plz: "99610"
+    ort: Sömmerda
+    lat: 51.1369
+    lon: 11.1973
+    bundesland: TH
+  - id: Baumarkt_05
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_144306_17291_41.xlsx
+    category: baumarkt
+    plz: "17291"
+    ort: Schönfeld
+    lat: 53.3132
+    lon: 13.9322
+    bundesland: BB
+  - id: Baumarkt_06
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_144345_25899_51.xlsx
+    category: baumarkt
+    plz: "25899"
+    ort: Bosbüll
+    lat: 54.7772
+    lon: 8.8083
+    bundesland: SH
+  - id: Baumarkt_07
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_144643_25899_11.xlsx
+    category: baumarkt
+    plz: "25899"
+    ort: Bosbüll
+    lat: 54.7772
+    lon: 8.8083
+    bundesland: SH
+  - id: Baumarkt_08
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_145935_24392_1.xlsx
+    category: baumarkt
+    plz: "24392"
+    ort: Brebel
+    lat: 54.6394
+    lon: 9.7968
+    bundesland: SH
+  - id: Baumarkt_09
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_150057_23769_9.xlsx
+    category: baumarkt
+    plz: "23769"
+    ort: Fehmarn
+    lat: 54.4378
+    lon: 11.1935
+    bundesland: SH
+  - id: Baumarkt_10
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_150723_32107_8.xlsx
+    category: baumarkt
+    plz: "32107"
+    ort: Bad Salzuflen
+    lat: 52.0613
+    lon: 8.7341
+    bundesland: NW
+  - id: Baumarkt_11
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_151225_25813_51.xlsx
+    category: baumarkt
+    plz: "25813"
+    ort: Husum
+    lat: 54.4577
+    lon: 9.0619
+    bundesland: SH
+  - id: Baumarkt_12
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_151608_23730_33.xlsx
+    category: baumarkt
+    plz: "23730"
+    ort: Sierksdorf
+    lat: 54.1101
+    lon: 10.8245
+    bundesland: SH
+  - id: Baumarkt_13
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152016_17367_1.xlsx
+    category: baumarkt
+    plz: "17367"
+    ort: Eggesin
+    lat: 53.6797
+    lon: 14.0799
+    bundesland: MV
+  - id: Baumarkt_14
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152147_33378_5.xlsx
+    category: baumarkt
+    plz: "33378"
+    ort: Rheda-Wiedenbrück
+    lat: 51.8497
+    lon: 8.3002
+    bundesland: NW
+  - id: Baumarkt_15
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152325_17192_3.xlsx
+    category: baumarkt
+    plz: "17192"
+    ort: Varchentin
+    lat: 53.5469
+    lon: 12.7743
+    bundesland: MV
+  - id: Baumarkt_16
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152530_18233_16.xlsx
+    category: baumarkt
+    plz: "18233"
+    ort: Rakow
+    lat: 54.0108
+    lon: 11.6844
+    bundesland: MV
+    # inhaltsgleich mit Baumarkt_18
+  - id: Baumarkt_17
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152552_21684_7.xlsx
+    category: baumarkt
+    plz: "21684"
+    ort: Stade
+    lat: 53.5804
+    lon: 9.5076
+    bundesland: NI
+  - id: Baumarkt_18
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152530_18233_16.xlsx
+    category: baumarkt
+    plz: "18233"
+    ort: Rakow
+    lat: 54.0108
+    lon: 11.6844
+    bundesland: MV
+    # inhaltsgleich mit Baumarkt_16
+  - id: Baumarkt_19
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_152932_24852_21.xlsx
+    category: baumarkt
+    plz: "24852"
+    ort: Süderhackstedt
+    lat: 54.6042
+    lon: 9.3375
+    bundesland: SH
+  - id: Baumarkt_20
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_153006_23730_33.xlsx
+    category: baumarkt
+    plz: "23730"
+    ort: Sierksdorf
+    lat: 54.1101
+    lon: 10.8245
+    bundesland: SH
+    # inhaltsgleich mit Baumarkt_21
+  - id: Baumarkt_21
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_153006_23730_33.xlsx
+    category: baumarkt
+    plz: "23730"
+    ort: Sierksdorf
+    lat: 54.1101
+    lon: 10.8245
+    bundesland: SH
+    # inhaltsgleich mit Baumarkt_20
+  - id: Baumarkt_22
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_154020_18198_14.xlsx
+    category: baumarkt
+    plz: "18198"
+    ort: Kritzmow
+    lat: 54.0468
+    lon: 12.0382
+    bundesland: MV
+  - id: Baumarkt_23
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_154512_26723_1.xlsx
+    category: baumarkt
+    plz: "26723"
+    ort: Emden
+    lat: 53.3667
+    lon: 7.2167
+    bundesland: NI
+  - id: Baumarkt_24
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_154536_24109_12.xlsx
+    category: baumarkt
+    plz: "24109"
+    ort: Melsdorf
+    lat: 54.3186
+    lon: 10.0421
+    bundesland: SH
+  - id: Baumarkt_25
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_154725_19230_54.xlsx
+    category: baumarkt
+    plz: "19230"
+    ort: Bandenitz
+    lat: 53.4146
+    lon: 11.2253
+    bundesland: MV
+  - id: Baumarkt_26
+    file: data/raw/Baumärkte/Zeitreihenvisualisierung_13032026_154901_24119_211.xlsx
+    category: baumarkt
+    plz: "24119"
+    ort: Kronshagen
+    lat: 54.3333
+    lon: 10.0833
+    bundesland: SH
